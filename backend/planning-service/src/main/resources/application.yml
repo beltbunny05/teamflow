@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: planning-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:planning_db}
+    username: ${DB_USER:teamflow}
+    password: ${DB_PASSWORD:teamflow_local_only}
+    hikari:
+      maximum-pool-size: 5
+  sql:
+    init:
+      mode: never
+
+server:
+  port: ${SERVER_PORT:8084}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
