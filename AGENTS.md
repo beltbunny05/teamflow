@@ -26,7 +26,7 @@ The MVP does not include individual employee records, individual employee availa
 - Teams are not automatically divided between projects in the MVP.
 - Planning uses service days and whole calendar days.
 - Weekdays, weekends and holidays count equally in the MVP.
-- Service duration is informed manually by the manager and is not inferred automatically from unrelated operational indicators.
+- Service duration is informed manually by the manager; the system does not calculate production, installations or productivity to determine duration.
 - Transportation is a separate planning event with duration informed manually in whole days.
 - A team is unavailable during transportation and cannot begin another service before completing the displacement and arriving at the destination.
 - The system identifies conflicts and explains their causes.
