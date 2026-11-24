@@ -10,6 +10,9 @@ spring:
   sql:
     init:
       mode: never
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 server:
   port: ${SERVER_PORT:8083}
@@ -22,3 +25,7 @@ management:
   endpoint:
     health:
       show-details: never
+
+teamflow:
+  organization:
+    default-id: ${TEAMFLOW_DEFAULT_ORGANIZATION_ID:00000000-0000-0000-0000-000000000001}

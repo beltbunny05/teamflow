@@ -1,6 +1,6 @@
 # TeamFlow — Initial Architecture
 
-**Status:** Approved initial direction; implementation scaffold
+**Status:** Approved initial direction; incremental implementation in progress
 **Scope:** MVP foundation
 **Date:** 2026-11-23
 
@@ -13,7 +13,7 @@
 - The frontend is an independent React application using JavaScript and CSS.
 - Docker Compose runs the local environment.
 - Micro Frontends are not implemented in this stage.
-- No application business rules are implemented in this scaffold.
+- Team and Project services now contain their initial CRUD functionality; Planning workflows remain unimplemented.
 
 ## 2. Service responsibilities
 
@@ -24,7 +24,7 @@
 | Project Service | Projects, services and locations. | `project_db` |
 | Planning Service | Allocations, transportation, conflicts and planning. | `planning_db` |
 
-The service boundaries are intentionally limited to the approved responsibilities. No domain entities or business workflows are created in this scaffold.
+The service boundaries remain limited to the approved responsibilities. Team and Project domains have initial CRUD entities and workflows; allocation, transportation and conflict workflows remain assigned to the Planning Service and are not implemented yet.
 
 ## 3. Data ownership
 
@@ -83,7 +83,7 @@ flowchart LR
     PLAN -->|planning_db| PG
 ```
 
-The dashed calls are future business integrations. This scaffold does not implement them.
+The dashed calls are future business integrations. They are not implemented in the current incremental stage.
 
 ## 7. Pending decisions
 

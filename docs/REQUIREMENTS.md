@@ -3,7 +3,7 @@
 **Status:** Draft revisado derivado do `PROJECT_BRIEF.md`  
 **Data:** 2026-11-19  
 **Escopo:** MVP  
-**Implementação:** não iniciada
+**Implementação:** incremental iniciada; Team Service e Project Service possuem CRUD inicial
 
 ## 1. Objetivo
 

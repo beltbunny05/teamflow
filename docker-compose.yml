@@ -69,6 +69,7 @@ services:
       DB_NAME: project_db
       DB_USER: ${POSTGRES_USER:-teamflow}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-teamflow_local_only}
+      TEAMFLOW_DEFAULT_ORGANIZATION_ID: ${TEAMFLOW_DEFAULT_ORGANIZATION_ID:-00000000-0000-0000-0000-000000000001}
     ports:
       - "${PROJECT_SERVICE_PORT:-8083}:8083"
     depends_on:

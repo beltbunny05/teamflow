@@ -4,7 +4,7 @@
 **Data:** 2026-11-21  
 **Escopo:** MVP  
 **Documentos de origem:** `PROJECT_BRIEF.md` e `REQUIREMENTS.md`  
-**Implementação:** não iniciada
+**Implementação:** incremental iniciada; regras de cadastro de equipes e projetos possuem implementação inicial
 
 ## 1. Identificação e conceitos fundamentais
 
