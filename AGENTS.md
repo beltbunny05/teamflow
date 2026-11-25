@@ -15,7 +15,7 @@ The system helps managers:
 
 This project is also the practical implementation of an MBA Software Engineering thesis at USP.
 
-The MVP does not include individual employee records, individual employee availability, individual employee allocation or individual employee conflicts. Team composition may be recorded by roles and quantities without identifying individual people.
+The product must support considering employees individually in planning. Employees may participate in multiple teams, may require individual allocation to projects and may have transportation independent from their teams. The identification, registration, availability, team membership and conflict rules for employees remain pending business decisions and must not be inferred during implementation. Team composition may still be recorded by roles and quantities.
 
 ## Product principles
 

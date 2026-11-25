@@ -1,7 +1,7 @@
 # TeamFlow — Business Rules
 
-**Status:** Draft inicial para validação  
-**Data:** 2026-11-21  
+**Status:** Consolidado para revisão das pendências
+**Data:** 2026-11-24
 **Escopo:** MVP  
 **Documentos de origem:** `PROJECT_BRIEF.md` e `REQUIREMENTS.md`  
 **Implementação:** incremental iniciada; regras de cadastro de equipes e projetos possuem implementação inicial
@@ -10,17 +10,29 @@
 
 ### 1.1 Regras confirmadas
 
-**RN-BR-001 — Equipe como unidade de alocação**  
-A equipe inteira é a unidade principal de planejamento e alocação.
+**RN-BR-001 — Projeto como unidade de planejamento**
+O planejamento é orientado por projetos. Serviços são informações auxiliares dos projetos e não constituem a unidade principal de planejamento.
 
-**RN-BR-002 — Ausência de alocação individual**  
-O MVP não possui alocação, disponibilidade ou conflito operacional de funcionários individuais.
+**RN-BR-002 — Recursos do planejamento**
+Equipes e funcionários podem ser considerados individualmente na análise de participação em projetos.
 
 **RN-BR-003 — Projetos simultâneos**  
 Projetos podem ocorrer simultaneamente, inclusive em localidades diferentes.
 
 **RN-BR-004 — Responsabilidade do gestor**  
 O gestor cadastra e atualiza os dados operacionais e mantém a decisão final sobre as alocações.
+
+**RN-BR-054 — Participação individual confirmada**
+O produto deve permitir considerar funcionários individualmente, inclusive quando o funcionário participa de mais de uma equipe.
+
+**RN-BR-055 — Deslocamento individual independente**
+O deslocamento de um funcionário pode ocorrer independentemente do deslocamento da equipe à qual ele pertence.
+
+**RN-BR-056 — Conflitos em múltiplos níveis**
+O sistema deve permitir analisar conflitos envolvendo projetos, equipes e funcionários.
+
+**RN-BR-057 — Confirmação explícita**
+Nenhuma alteração de planejamento, inclusive alocação individual, deve ser aplicada sem aprovação explícita do gestor.
 
 ### 1.2 Regras que precisam de detalhamento
 
@@ -97,7 +109,7 @@ O detalhamento opcional da composição por funções não cria, por si só, qua
 Um projeto pode possuir nome ou identificação, cliente quando aplicável, localidade e descrição do serviço.
 
 **RN-BR-014 — Datas e duração separadas**  
-Data prevista de início, data prevista de término, duração estimada e quantidade de dias de serviço são informações distintas. O sistema não deve presumir que uma seja automaticamente calculada a partir de outra.
+Data prevista de início, data prevista de término, duração estimada do projeto e informações auxiliares de serviços são informações distintas. O sistema não deve presumir que uma seja automaticamente calculada a partir de outra.
 
 **RN-BR-015 — Exigências do projeto**  
 Um projeto pode registrar competências e qualificações necessárias.
@@ -110,41 +122,41 @@ O cadastro deve permitir projetos simultâneos em localidades diferentes.
 - Como tratar projetos com mais de uma equipe.
 - Como tratar projetos com mais de uma etapa.
 - Como tratar projetos com mais de uma localidade.
-- Como relacionar a quantidade de dias de serviço ao projeto e à alocação.
+- Como relacionar a duração do projeto e as informações auxiliares de serviços à alocação.
 - Quais validações mínimas são necessárias para criar ou editar um projeto.
 
 ### 4.3 Decisões dependentes de aprovação
 
 - Aprovar a precedência entre datas previstas e duração estimada quando houver divergência.
-- Aprovar se uma quantidade de dias de serviço pertence ao projeto, ao serviço ou à alocação.
+- Aprovar se a duração informada pertence ao projeto, a uma informação auxiliar ou à alocação.
 - Aprovar a forma de representar múltiplas equipes, etapas ou localidades.
 
-## 5. Regras de dias de serviço
+## 5. Regras de duração e informações auxiliares
 
 ### 5.1 Regras confirmadas
 
-**RN-BR-017 — Significado dos dias de serviço**  
-Dias de serviço representam a quantidade de dias necessária para executar o serviço de um projeto.
+**RN-BR-017 — Duração informada do projeto**
+A duração informada representa a quantidade de dias considerada necessária para o planejamento de um projeto. Serviços podem manter informações auxiliares de duração.
 
 **RN-BR-018 — Informação manual**  
-O gestor informa manualmente a duração estimada do serviço com base em sua avaliação operacional.
+O gestor informa manualmente a duração ou o período relevante do projeto com base em sua avaliação operacional.
 
 **RN-BR-019 — Dias inteiros**  
-Os dias de serviço são expressos em dias inteiros.
+As durações e períodos de planejamento são expressos em dias inteiros.
 
 **RN-BR-020 — Sem cálculo de produção**  
 O sistema não calcula produtividade, instalações por dia, produção por integrante ou capacidade produtiva para determinar a duração do serviço.
 
 ### 5.2 Regras que precisam de detalhamento
 
-- Como tratar a diferença entre duração estimada e quantidade de dias de serviço necessários quando ambas forem informadas.
+- Como tratar a diferença entre duração estimada do projeto e informações auxiliares de serviços quando ambas forem informadas.
 - Como tratar alterações na duração depois de uma alocação confirmada.
 - Como validar valores nulos, zero ou negativos.
 
 ### 5.3 Decisões dependentes de aprovação
 
-- Aprovar a regra de precedência quando datas e duração estimada divergirem.
-- Aprovar as regras de alteração dos dias de serviço após confirmação da alocação.
+- Aprovar a regra de precedência quando datas e duração estimada do projeto divergirem.
+- Aprovar as regras de alteração da duração ou das informações auxiliares após confirmação da alocação.
 
 ## 6. Regras de calendário
 
@@ -160,7 +172,7 @@ Segundas-feiras, sábados, domingos e feriados contam como dias normais. Não h�
 A regra de dias de calendário aplica-se a projetos, alocações, transportes e disponibilidade.
 
 **RN-BR-024 — Período comprometido**  
-As datas inicial e final de uma alocação representam o período em que a equipe está comprometida com o serviço.
+As datas inicial e final de uma alocação representam o período em que o recurso está comprometido com o projeto.
 
 ### 6.2 Regras que precisam de detalhamento
 
@@ -177,17 +189,17 @@ As datas inicial e final de uma alocação representam o período em que a equip
 
 ### 7.1 Regras confirmadas
 
-**RN-BR-025 — Unidade da alocação**  
-Uma alocação representa o compromisso de uma equipe com um projeto durante determinado período.
+**RN-BR-025 — Alocação orientada por projeto**
+Uma alocação representa o compromisso de uma equipe ou funcionário com um projeto durante determinado período.
 
 **RN-BR-026 — Dados mínimos**  
-Uma alocação deve relacionar equipe, projeto e período de alocação.
+Uma alocação deve relacionar projeto, recurso envolvido e período de alocação. A obrigatoriedade e a forma de relacionar equipe e funcionário ainda precisam ser definidas.
 
 **RN-BR-027 — Operação manual**  
 O gestor cria e edita alocações manualmente, com apoio do sistema para consultar disponibilidade e identificar conflitos.
 
-**RN-BR-028 — Equipe inteira**  
-Uma alocação compromete a equipe inteira; o MVP não fraciona automaticamente a equipe.
+**RN-BR-028 — Integridade da equipe**
+Quando uma equipe for alocada, a regra de comprometimento da equipe inteira continua válida. O sistema não deve fracionar automaticamente uma equipe sem regra aprovada. Essa regra não impede que funcionários sejam analisados ou alocados individualmente.
 
 **RN-BR-029 — Confirmação do gestor**  
 Uma alocação ou alteração de planejamento só é efetivada após confirmação do gestor.
@@ -208,14 +220,14 @@ Uma alocação ou alteração de planejamento só é efetivada após confirmaç�
 
 ### 8.1 Regras confirmadas
 
-**RN-BR-030 — Disponibilidade no nível de equipe**  
-A disponibilidade é controlada no nível da equipe, não no nível de funcionários individuais.
+**RN-BR-030 — Disponibilidade dos recursos**
+A disponibilidade relevante pode existir no nível da equipe e no nível individual. O modelo, as exceções e a relação entre os dois níveis ainda precisam ser definidos.
 
 **RN-BR-031 — Consulta antes da confirmação**  
-O gestor deve poder consultar a disponibilidade da equipe antes de confirmar uma alocação.
+O gestor deve poder consultar a disponibilidade dos recursos envolvidos antes de confirmar uma alocação.
 
 **RN-BR-032 — Compromissos considerados**  
-Projetos alocados e eventos de transporte são compromissos que devem ser considerados na análise da disponibilidade.
+Projetos alocados e eventos de transporte de equipes ou funcionários são compromissos que devem ser considerados na análise da disponibilidade.
 
 ### 8.2 Regras que precisam de detalhamento
 
@@ -236,19 +248,19 @@ Projetos alocados e eventos de transporte são compromissos que devem ser consid
 ### 9.1 Regras confirmadas
 
 **RN-BR-033 — Evento próprio**  
-O transporte é um evento próprio do planejamento, separado da alocação do serviço.
+O transporte é um evento próprio do planejamento, separado da alocação do projeto.
 
 **RN-BR-034 — Dados do transporte**  
-Um deslocamento registra equipe, localidade de origem, localidade de destino, data de início e duração estimada em dias inteiros.
+Um deslocamento registra o recurso envolvido, localidade de origem, localidade de destino, data de início e duração estimada em dias inteiros. O recurso pode ser uma equipe ou um funcionário.
 
 **RN-BR-035 — Duração manual**  
 A duração do transporte é informada manualmente pelo gestor.
 
 **RN-BR-036 — Indisponibilidade durante deslocamento**  
-A equipe fica indisponível para outros projetos durante o período do deslocamento.
+O recurso envolvido fica indisponível para compromissos incompatíveis durante o período do deslocamento.
 
 **RN-BR-037 — Chegada antes do próximo serviço**  
-A equipe não pode iniciar outro serviço antes de concluir o deslocamento e chegar ao destino.
+O recurso envolvido não pode iniciar outro compromisso incompatível antes de concluir o deslocamento e chegar ao destino, conforme regra ainda pendente.
 
 **RN-BR-038 — Sem cálculo de rota**  
 O MVP não calcula automaticamente rotas, distâncias ou tempos de deslocamento e não depende de serviços de mapas.
@@ -275,7 +287,7 @@ O MVP não calcula automaticamente rotas, distâncias ou tempos de deslocamento 
 O sistema identifica situações que impeçam ou comprometam uma alocação.
 
 **RN-BR-040 — Tipos iniciais**  
-As situações identificadas incluem equipe comprometida com outro projeto, equipe em deslocamento, equipe sem disponibilidade e competências necessárias não atendidas.
+As situações identificadas podem incluir projeto, equipe ou funcionário comprometido com outro projeto, deslocamento incompatível, indisponibilidade e competências ou qualificações não atendidas.
 
 **RN-BR-041 — Explicação**  
 O sistema apresenta ao gestor o motivo de cada incompatibilidade identificada.
@@ -391,7 +403,7 @@ As seguintes decisões continuam abertas e não devem ser inferidas:
 2. Cadastro, níveis, validade e comparação de competências e qualificações.
 3. Projetos que exigem mais de uma equipe.
 4. Projetos com múltiplas etapas ou localidades.
-5. Precedência entre data prevista de início, data prevista de término, duração estimada e dias de serviço.
+5. Precedência entre data prevista de início, data prevista de término, duração estimada do projeto e informações auxiliares de serviços.
 6. Inclusão das datas inicial e final no intervalo de alocação.
 7. Disponibilidade parcial, ausências e alterações futuras da equipe.
 8. Exceções de disponibilidade e respectivas autorizações.
@@ -404,6 +416,15 @@ As seguintes decisões continuam abertas e não devem ser inferidas:
 15. Representação de organizações e eventual `organization_id`.
 16. Limites, responsabilidades e quantidade dos microsserviços.
 17. Comunicação, autenticação e propriedade dos dados entre serviços.
+18. Como identificar e cadastrar funcionários.
+19. Se um funcionário pode pertencer a várias equipes simultaneamente, inclusive com funções diferentes.
+20. Como representar a disponibilidade individual.
+21. Como funciona a alocação individual em relação à alocação da equipe.
+22. Se uma alocação individual pode existir sem alocação prévia da equipe.
+23. Como representar o deslocamento individual.
+24. Como identificar conflitos quando uma pessoa participa de múltiplas equipes.
+25. Como tratar conflitos entre datas, localidades, projetos e deslocamentos.
+26. Quando um conflito bloqueia uma operação e quando gera apenas alerta.
 
 ### 14.2 Decisões que dependem de aprovação
 
@@ -424,15 +445,15 @@ O responsável pelo produto deve aprovar, no mínimo:
 
 | Regra ou grupo de regras | Requisitos relacionados | Situação |
 |---|---|---|
-| Equipe como unidade e ausência de cadastro individual | RF-004 a RF-010, RF-027 | Correspondente |
+| Projeto como unidade e recursos equipe/funcionário | RF-004 a RF-010, RF-050 a RF-055, RF-027 | Correspondente; detalhamento individual pendente |
 | Competências e qualificações da equipe e do projeto | RF-007, RF-012, RF-036 | Correspondente; critérios de comparação pendentes |
 | Cadastro e alterações manuais pelo gestor | RF-004, RF-009, RF-011, RF-021, RF-023, RF-028, RF-043 | Correspondente; permissões e confirmações pendentes |
 | Cadastro de projetos e datas separadas | RF-011 a RF-018 | Correspondente; precedência pendente |
-| Dias de serviço e duração informada | RF-015, RF-016 | Correspondente; relação entre duração e dias pendente |
+| Duração informada e serviços auxiliares | RF-015, RF-016 | Correspondente; precedência e relação com alocação pendentes |
 | Calendário e período de alocação | RF-019 a RF-024 | Correspondente; regras de intervalo pendentes |
-| Disponibilidade da equipe | RF-008, RF-024, RF-034 | Correspondente; modelo de disponibilidade pendente |
-| Transporte e chegada | RF-028 a RF-033 | Correspondente; dia de chegada pendente |
-| Conflitos e explicações | RF-025, RF-034 a RF-039 | Correspondente; bloqueio versus alerta pendente |
+| Disponibilidade de equipes e funcionários | RF-008, RF-024, RF-034, RF-050 a RF-054 | Correspondente; modelo individual e relação entre níveis pendentes |
+| Transporte de equipes e funcionários | RF-028 a RF-033, RF-053 | Correspondente; modelo individual e dia de chegada pendentes |
+| Conflitos envolvendo projetos, equipes e funcionários | RF-025, RF-034 a RF-039, RF-054 | Correspondente; regras de identificação, bloqueio e alerta pendentes |
 | Sugestões assistidas | RF-040 a RF-044 | Correspondente; prioridade `SHOULD` e critérios pendentes |
 | Confirmação e alterações | RF-021, RF-023, RF-043, RF-044 | Correspondente; regras de confirmação com alertas pendentes |
 | Histórico e auditoria | RF-048, RNF-018 | Correspondente; escopo do histórico pendente |

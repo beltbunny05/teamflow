@@ -13,6 +13,7 @@ export function ProjectPage() {
   const [selectedProject, setSelectedProject] = useState(null)
   const [form, setForm] = useState(EMPTY_PROJECT)
   const [editingId, setEditingId] = useState(null)
+  const [view, setView] = useState('list')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -36,6 +37,7 @@ export function ProjectPage() {
   const startCreate = () => {
     setSelectedProject(null)
     setEditingId('new')
+    setView('new')
     setForm({ ...EMPTY_PROJECT, localities: [{ identification: '' }], services: [{ ...EMPTY_SERVICE }] })
     setFormError('')
   }
@@ -43,13 +45,16 @@ export function ProjectPage() {
   const startEdit = (project) => {
     setEditingId(project.id)
     setSelectedProject(project)
+    setView('edit')
     setForm(projectToForm(project))
     setFormError('')
   }
 
   const closeEditor = () => {
+    const returningToDetail = editingId !== 'new' && selectedProject
     setEditingId(null)
     setFormError('')
+    setView(returningToDetail ? 'detail' : 'list')
   }
 
   const saveProject = async (event) => {
@@ -63,6 +68,7 @@ export function ProjectPage() {
       })
       setSelectedProject(project)
       setEditingId(null)
+      setView('detail')
       await loadProjects()
     } catch (saveError) {
       setFormError(saveError.message)
@@ -75,17 +81,14 @@ export function ProjectPage() {
     <section>
       <PageHeader title="Projetos" description="Organize projetos simultâneos, períodos e localidades." actionLabel="Novo projeto" onAction={startCreate} />
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      <div className="workspace-layout">
-        <div className="table-section">
+      {view === 'list' && <div className="content-section">
           <div className="section-meta"><span>{projects.length} {projects.length === 1 ? 'projeto' : 'projetos'}</span></div>
           {loading ? <LoadingState label="Carregando projetos…" /> : projects.length === 0 ? (
             <EmptyState title="Nenhum projeto cadastrado" description="Cadastre o primeiro projeto para começar." actionLabel="Novo projeto" onAction={startCreate} />
-          ) : <ProjectTable projects={projects} selectedId={selectedProject?.id} onSelect={(project) => { setSelectedProject(project); setEditingId(null) }} />}
-        </div>
-        <aside className="detail-section">
-          {editingId ? <ProjectForm form={form} formError={formError} editingId={editingId} saving={saving} onChange={setForm} onSubmit={saveProject} onCancel={closeEditor} /> : selectedProject ? <ProjectDetails project={selectedProject} onEdit={() => startEdit(selectedProject)} /> : <SelectionPrompt title="Selecione um projeto" description="Escolha uma linha para consultar os detalhes ou crie um novo projeto." actionLabel="Novo projeto" onAction={startCreate} />}
-        </aside>
-      </div>
+          ) : <ProjectTable projects={projects} selectedId={selectedProject?.id} onSelect={(project) => { setSelectedProject(project); setEditingId(null); setView('detail') }} />}
+        </div>}
+      {view === 'detail' && selectedProject && <div className="content-section detail-page"><BackButton onClick={() => setView('list')} /><ProjectDetails project={selectedProject} onEdit={() => startEdit(selectedProject)} /></div>}
+      {(view === 'new' || view === 'edit') && <div className="content-section form-page"><BackButton onClick={closeEditor} /><ProjectForm form={form} formError={formError} editingId={editingId} saving={saving} onChange={setForm} onSubmit={saveProject} onCancel={closeEditor} /></div>}
     </section>
   )
 }
@@ -103,11 +106,11 @@ function ProjectForm({ form, formError, editingId, saving, onChange, onSubmit, o
 }
 
 function ProjectDetails({ project, onEdit }) {
-  return <div className="detail-content"><div className="detail-header"><FormHeading eyebrow="DETALHES DO PROJETO" title={project.identification} /><button className="secondary-button" type="button" onClick={onEdit}>Editar</button></div><dl className="facts-list"><div><dt>Início previsto</dt><dd>{project.plannedStartDate || 'Não informado'}</dd></div><div><dt>Término previsto</dt><dd>{project.plannedEndDate || 'Não informado'}</dd></div></dl>{project.client && <div className="detail-block"><h3>Cliente</h3><p className="muted">{project.client}</p></div>}<div className="detail-block"><h3>Descrição</h3><p className="muted">{project.description || 'Não informada.'}</p></div><DetailList title="Localidades" values={(project.localities || []).map((item) => item.identification)} empty="Nenhuma localidade informada." /><div className="detail-block"><h3>Serviços de apoio</h3>{project.services?.length ? <div className="supporting-list">{project.services.map((item) => <div className="supporting-item" key={item.identification}><strong>{item.identification}</strong><p>{item.description || 'Sem descrição.'}</p><small>{item.serviceDays ?? '—'} dias de serviço · duração estimada: {item.estimatedDurationDays ?? '—'} dias</small></div>)}</div> : <p className="muted">Nenhum serviço informado.</p>}</div></div>
+  return <div className="detail-content"><div className="detail-header"><FormHeading eyebrow="DETALHES DO PROJETO" title={project.identification} /><button className="secondary-button" type="button" onClick={onEdit}>Editar projeto</button></div><dl className="facts-list"><div><dt>Início previsto</dt><dd>{project.plannedStartDate || 'Não informado'}</dd></div><div><dt>Término previsto</dt><dd>{project.plannedEndDate || 'Não informado'}</dd></div></dl>{project.client && <div className="detail-block"><h3>Cliente</h3><p className="muted">{project.client}</p></div>}<div className="detail-block"><h3>Descrição</h3><p className="muted">{project.description || 'Não informada.'}</p></div><DetailList title="Localidades" values={(project.localities || []).map((item) => item.identification)} empty="Nenhuma localidade informada." /><div className="detail-block"><h3>Serviços de apoio</h3>{project.services?.length ? <div className="supporting-list">{project.services.map((item) => <div className="supporting-item" key={item.identification}><strong>{item.identification}</strong><p>{item.description || 'Sem descrição.'}</p><small>{item.serviceDays ?? '—'} dias de serviço · duração estimada: {item.estimatedDurationDays ?? '—'} dias</small></div>)}</div> : <p className="muted">Nenhum serviço informado.</p>}</div></div>
 }
 
 function DetailList({ title, values = [], empty }) { return <div className="detail-block"><h3>{title}</h3>{values.length ? <ul className="value-list">{values.map((value) => <li key={value}>{value}</li>)}</ul> : <p className="muted">{empty}</p>}</div> }
-function SelectionPrompt({ title, description, actionLabel, onAction }) { return <div className="selection-prompt"><p className="eyebrow">DETALHES</p><h2>{title}</h2><p>{description}</p><button className="secondary-button" type="button" onClick={onAction}>{actionLabel}</button></div> }
+function BackButton({ onClick }) { return <button className="back-button" type="button" onClick={onClick}>← Voltar para projetos</button> }
 function formatPeriod(project) { if (project.plannedStartDate && project.plannedEndDate) return `${project.plannedStartDate} — ${project.plannedEndDate}`; return project.plannedStartDate || project.plannedEndDate || 'Não informado' }
 function listValues(value) { return value.split(',').map((item) => item.trim()).filter(Boolean) }
 function optionalNumber(value) { return value === '' ? null : Number(value) }

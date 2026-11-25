@@ -104,3 +104,43 @@ legend { padding: 0 6px; font-size: 13px; font-weight: 650; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 900px) { .app-shell { width: min(var(--content-width), calc(100% - 40px)); } .workspace-layout { grid-template-columns: 1fr; } .detail-section { order: -1; } }
 @media (max-width: 600px) { .app-shell { width: calc(100% - 32px); padding-top: 20px; } .main-nav { margin-top: 26px; } .nav-group { gap: 16px; overflow-x: auto; } .nav-label { margin-right: 0; } .page-content { padding-top: var(--s6); } .page-header { display: block; margin-bottom: var(--s6); } .page-header .primary-button { width: 100%; margin-top: var(--s5); } .detail-content, .form-layout, .selection-prompt { padding: var(--s5); } .detail-header { display: block; } .detail-header .secondary-button { width: 100%; } .two-columns, .facts-list { grid-template-columns: 1fr; gap: 0; } th, td { padding-right: 12px; padding-left: 12px; } }
+
+/* Etapa 2: shell lateral e navegação por estados na área de trabalho. */
+.app-frame { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; background: var(--paper); }
+.sidebar { position: sticky; top: 0; display: flex; min-height: 100vh; flex-direction: column; padding: 28px 22px 24px; border-right: 1px solid var(--rule); background: var(--surface); z-index: 4; }
+.sidebar-brand { display: flex; align-items: center; gap: var(--s3); padding: 0 8px; }
+.sidebar-section { margin-top: 72px; }
+.sidebar-label { margin: 0 8px 12px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+.sidebar-link { display: block; width: 100%; margin-bottom: 3px; padding: 11px 12px; border: 0; border-left: 2px solid transparent; color: var(--muted); background: transparent; text-align: left; font-size: 14px; font-weight: 650; }
+.sidebar-link:hover, .sidebar-link.active { border-left-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.sidebar-context { display: grid; gap: 4px; margin: auto 8px 0; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 11px; }
+.sidebar-context strong { color: var(--ink); font-size: 13px; font-weight: 650; }
+.app-main { min-width: 0; }
+.app-main .page-content { width: min(1120px, calc(100% - 96px)); margin: 0 auto; padding-top: 64px; }
+.mobile-header, .mobile-menu-button, .sidebar-scrim { display: none; }
+.content-section { max-width: 980px; }
+.content-section .table-wrap { border-top-width: 2px; }
+.detail-page, .form-page { max-width: 760px; padding-bottom: 40px; }
+.detail-page .detail-content, .form-page .form-layout { padding: 0; background: transparent; }
+.back-button { margin-bottom: 32px; padding: 0; border: 0; color: var(--muted); background: transparent; font-size: 13px; font-weight: 650; }
+.back-button:hover { color: var(--accent); }
+.detail-page .detail-header { align-items: flex-end; }
+.form-page .form-layout { max-width: 720px; }
+
+@media (max-width: 900px) {
+  .app-frame { display: block; }
+  .sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: 248px; min-height: 100vh; transform: translateX(-100%); transition: transform .18s ease; box-shadow: 10px 0 30px rgba(32, 37, 34, .08); }
+  .sidebar.is-open { transform: translateX(0); }
+  .sidebar-scrim { position: fixed; inset: 0; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: rgba(32, 37, 34, .24); z-index: 3; }
+  .mobile-menu-button { position: fixed; top: 16px; left: 16px; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 7px 10px; border: 1px solid var(--rule); color: var(--ink); background: var(--surface); font-size: 12px; font-weight: 700; z-index: 2; }
+  .mobile-header { display: flex; align-items: center; justify-content: flex-end; gap: 16px; min-height: 36px; }
+  .app-main .page-content { width: min(100% - 48px, 1120px); padding-top: 48px; }
+}
+
+@media (max-width: 600px) {
+  .mobile-header { padding-top: 10px; }
+  .app-main .page-content { width: calc(100% - 32px); padding-top: 40px; }
+  .page-header { margin-bottom: 32px; }
+  .detail-page .detail-header { display: block; }
+  .detail-page .detail-header .secondary-button { width: auto; margin-top: 8px; }
+}

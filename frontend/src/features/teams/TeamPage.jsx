@@ -15,6 +15,7 @@ export function TeamPage() {
   const [selectedTeam, setSelectedTeam] = useState(null)
   const [form, setForm] = useState(EMPTY_TEAM)
   const [editingId, setEditingId] = useState(null)
+  const [view, setView] = useState('list')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -38,6 +39,7 @@ export function TeamPage() {
   const startCreate = () => {
     setSelectedTeam(null)
     setEditingId('new')
+    setView('new')
     setForm({ ...EMPTY_TEAM, composition: [{ role: '', quantity: '' }] })
     setFormError('')
   }
@@ -45,13 +47,16 @@ export function TeamPage() {
   const startEdit = (team) => {
     setEditingId(team.id)
     setSelectedTeam(team)
+    setView('edit')
     setForm(teamToForm(team))
     setFormError('')
   }
 
   const closeEditor = () => {
+    const returningToDetail = editingId !== 'new' && selectedTeam
     setEditingId(null)
     setFormError('')
+    setView(returningToDetail ? 'detail' : 'list')
   }
 
   const saveTeam = async (event) => {
@@ -65,6 +70,7 @@ export function TeamPage() {
       })
       setSelectedTeam(team)
       setEditingId(null)
+      setView('detail')
       await loadTeams()
     } catch (saveError) {
       setFormError(saveError.message)
@@ -77,17 +83,14 @@ export function TeamPage() {
     <section>
       <PageHeader title="Equipes" description="Organize equipes, capacidades e disponibilidade cadastrada." actionLabel="Nova equipe" onAction={startCreate} />
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      <div className="workspace-layout">
-        <div className="table-section">
+      {view === 'list' && <div className="content-section">
           <div className="section-meta"><span>{teams.length} {teams.length === 1 ? 'equipe' : 'equipes'}</span></div>
           {loading ? <LoadingState label="Carregando equipes…" /> : teams.length === 0 ? (
             <EmptyState title="Nenhuma equipe cadastrada" description="Cadastre a primeira equipe para começar." actionLabel="Nova equipe" onAction={startCreate} />
-          ) : <TeamTable teams={teams} selectedId={selectedTeam?.id} onSelect={(team) => { setSelectedTeam(team); setEditingId(null) }} />}
-        </div>
-        <aside className="detail-section">
-          {editingId ? <TeamForm form={form} formError={formError} editingId={editingId} saving={saving} onChange={setForm} onSubmit={saveTeam} onCancel={closeEditor} /> : selectedTeam ? <TeamDetails team={selectedTeam} onEdit={() => startEdit(selectedTeam)} /> : <SelectionPrompt title="Selecione uma equipe" description="Escolha uma linha para consultar os detalhes ou crie uma nova equipe." actionLabel="Nova equipe" onAction={startCreate} />}
-        </aside>
-      </div>
+          ) : <TeamTable teams={teams} selectedId={selectedTeam?.id} onSelect={(team) => { setSelectedTeam(team); setEditingId(null); setView('detail') }} />}
+        </div>}
+      {view === 'detail' && selectedTeam && <div className="content-section detail-page"><BackButton onClick={() => setView('list')} /><TeamDetails team={selectedTeam} onEdit={() => startEdit(selectedTeam)} /></div>}
+      {(view === 'new' || view === 'edit') && <div className="content-section form-page"><BackButton onClick={closeEditor} /><TeamForm form={form} formError={formError} editingId={editingId} saving={saving} onChange={setForm} onSubmit={saveTeam} onCancel={closeEditor} /></div>}
     </section>
   )
 }
@@ -105,12 +108,12 @@ function TeamForm({ form, formError, editingId, saving, onChange, onSubmit, onCa
 }
 
 function TeamDetails({ team, onEdit }) {
-  return <div className="detail-content"><div className="detail-header"><FormHeading eyebrow="DETALHES DA EQUIPE" title={team.identification} /><button className="secondary-button" type="button" onClick={onEdit}>Editar</button></div><dl className="facts-list"><div><dt>Integrantes</dt><dd>{team.totalMembers}</dd></div><div><dt>Situação</dt><dd><StatusLabel value={team.status || 'Não informada'} /></dd></div></dl><DetailList title="Composição" values={(team.composition || []).map((item) => `${item.role} · ${item.quantity}`)} empty="Não informada." /><DetailList title="Competências" values={team.competencies} empty="Nenhuma competência informada." /><DetailList title="Qualificações" values={team.qualifications} empty="Nenhuma qualificação informada." /></div>
+  return <div className="detail-content"><div className="detail-header"><FormHeading eyebrow="DETALHES DA EQUIPE" title={team.identification} /><button className="secondary-button" type="button" onClick={onEdit}>Editar equipe</button></div><dl className="facts-list"><div><dt>Integrantes</dt><dd>{team.totalMembers}</dd></div><div><dt>Situação</dt><dd><StatusLabel value={team.status || 'Não informada'} /></dd></div></dl><DetailList title="Composição" values={(team.composition || []).map((item) => `${item.role} · ${item.quantity}`)} empty="Não informada." /><DetailList title="Competências" values={team.competencies} empty="Nenhuma competência informada." /><DetailList title="Qualificações" values={team.qualifications} empty="Nenhuma qualificação informada." /></div>
 }
 
 function DetailList({ title, values = [], empty }) { return <div className="detail-block"><h3>{title}</h3>{values.length ? <ul className="value-list">{values.map((value) => <li key={value}>{value}</li>)}</ul> : <p className="muted">{empty}</p>}</div> }
 function StatusLabel({ value }) { return <span className="status-label">{value}</span> }
-function SelectionPrompt({ title, description, actionLabel, onAction }) { return <div className="selection-prompt"><p className="eyebrow">DETALHES</p><h2>{title}</h2><p>{description}</p><button className="secondary-button" type="button" onClick={onAction}>{actionLabel}</button></div> }
+function BackButton({ onClick }) { return <button className="back-button" type="button" onClick={onClick}>← Voltar para equipes</button> }
 
 function teamToForm(team) { return { identification: team.identification || '', totalMembers: team.totalMembers ?? '', status: team.status || '', competencies: (team.competencies || []).join(', '), qualifications: (team.qualifications || []).join(', '), availability: team.availability ? JSON.stringify(team.availability, null, 2) : '', composition: team.composition?.length ? team.composition.map((item) => ({ role: item.role, quantity: item.quantity })) : [{ role: '', quantity: '' }] } }
 function listValues(value) { return value.split(',').map((item) => item.trim()).filter(Boolean) }

@@ -20,9 +20,9 @@
 | Service | Responsibility | Own database |
 |---|---|---|
 | Identity Service | Users, authentication and organizations. | `identity_db` |
-| Team Service | Teams, aggregated composition, competencies and registered availability. | `team_db` |
+| Team Service | Teams, aggregated composition, competencies and registered availability. Ownership of employee records and team memberships remains pending. | `team_db` |
 | Project Service | Projects, services and locations. | `project_db` |
-| Planning Service | Allocations, transportation, conflicts and planning. | `planning_db` |
+| Planning Service | Project-oriented planning, allocations, transportation and conflicts involving teams and employees. | `planning_db` |
 
 The service boundaries remain limited to the approved responsibilities. Team and Project domains have initial CRUD entities and workflows; allocation, transportation and conflict workflows remain assigned to the Planning Service and are not implemented yet.
 
@@ -87,7 +87,8 @@ The dashed calls are future business integrations. They are not implemented in t
 
 ## 7. Pending decisions
 
-- Exact domain contracts between Planning, Team and Project services.
+- Exact domain contracts between Planning, Team and Project services, including employee and membership data.
+- Ownership of employee records, team memberships and individual availability.
 - Authentication and authorization flows between services.
 - Organization isolation and the final `organization_id` model.
 - Migration tooling and migration execution policy per service.

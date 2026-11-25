@@ -1,7 +1,7 @@
 TeamFlow — Project Brief
 
-Status: Validado para elaboração inicial dos requisitos
-Data: 2026-11-19
+Status: Validado para consolidação das regras de negócio
+Data: 2026-11-24
 Repositório: TeamFlow
 Prazo-alvo do MVP e da primeira documentação: 2026-12-31
 
@@ -11,13 +11,13 @@ Este documento registra o contexto, as decisões de produto e as premissas inici
 
 O documento deve ser atualizado conforme as decisões forem validadas. Decisões ainda não confirmadas devem permanecer identificadas como pendências.
 
-Validação desta versão: as decisões de produto, a unidade de equipe, o calendário em dias inteiros, o transporte manual, a direção tecnológica e a arquitetura inicial baseada em microsserviços estão alinhados. As questões da seção 25 continuam abertas e não devem ser tratadas como decisões implícitas nos requisitos.
+Validação desta versão: o planejamento é orientado por projetos, com equipes e funcionários como recursos que podem participar do planejamento. Serviços permanecem informações auxiliares dos projetos. O calendário em dias inteiros, o transporte manual, a direção tecnológica e a arquitetura inicial baseada em microsserviços continuam alinhados. As questões pendentes da seção 25 não devem ser tratadas como decisões implícitas nos requisitos.
 
 2. Contexto do produto
 
-TeamFlow é uma plataforma web SaaS B2B para planejamento e alocação de equipes entre múltiplos projetos simultâneos.
+TeamFlow é uma plataforma web SaaS B2B para planejamento e alocação de equipes e funcionários entre múltiplos projetos simultâneos.
 
-O produto busca atender empresas que precisam distribuir equipes entre diferentes projetos, clientes e localidades, considerando disponibilidade, competências, duração dos serviços e deslocamentos.
+O produto busca atender empresas que precisam organizar a participação de equipes e funcionários em diferentes projetos, clientes e localidades, considerando disponibilidade, competências, duração informada dos projetos e deslocamentos.
 
 O primeiro cenário de validação considera uma empresa sazonal com aproximadamente 40 integrantes, distribuídos em equipes que executam projetos em três ou quatro cidades simultaneamente.
 
@@ -52,8 +52,12 @@ Os perfis e permissões definitivos ainda precisam ser detalhados. Não implemen
 
 6. Decisões de produto confirmadas
 
-* Equipes são a unidade principal de planejamento e alocação.
-* O MVP não terá alocação individual de funcionários.
+* O planejamento é orientado por projetos, não por serviços individuais.
+* Serviços permanecem informações auxiliares dos projetos.
+* Equipes e funcionários podem ser considerados na análise de participação em projetos.
+* Um funcionário pode participar de múltiplas equipes.
+* Um funcionário pode precisar de alocação individual em um projeto.
+* O deslocamento de um funcionário pode ocorrer independentemente do deslocamento da equipe.
 * Projetos podem acontecer simultaneamente.
 * Uma equipe não pode estar alocada em dois compromissos incompatíveis no mesmo período.
 * O planejamento será realizado em dias inteiros.
@@ -67,7 +71,7 @@ Os perfis e permissões definitivos ainda precisam ser detalhados. Não implemen
 
 7. Modelo de equipes
 
-A equipe é a unidade de planejamento do TeamFlow.
+As equipes continuam sendo um recurso importante do planejamento, mas não são a única unidade possível. O planejamento principal é orientado por projetos e pode considerar equipes e funcionários individualmente.
 
 O cadastro deverá permitir registrar:
 
@@ -79,13 +83,16 @@ O cadastro deverá permitir registrar:
 
 A composição por funções será informativa. O MVP não fará cálculos automáticos de produtividade com base na quantidade ou função dos integrantes.
 
-Não fazem parte do MVP:
+As seguintes capacidades estão confirmadas como necessárias, mas dependem de detalhamento antes da implementação:
 
-* Cadastro individual de funcionários.
+* Cadastro e identificação de funcionários.
 * Disponibilidade individual.
-* Alocação individual.
-* Controle de conflitos individuais.
-* Divisão automática de equipes.
+* Vínculo de um funcionário com múltiplas equipes.
+* Alocação individual em projetos.
+* Deslocamento individual independente do deslocamento da equipe.
+* Conflitos envolvendo pessoas, equipes e projetos.
+
+O sistema não deve dividir automaticamente uma equipe sem uma regra aprovada para esse comportamento.
 
 8. Modelo de projetos
 
@@ -102,25 +109,27 @@ Informações previstas:
 * Competências ou qualificações necessárias.
 * Quantidade de dias de serviço necessários.
 
+As informações de serviços e seus dias permanecem auxiliares ao cadastro do projeto; não definem, por si só, a unidade principal de planejamento.
+
 O modelo deverá permitir cadastrar projetos simultâneos em diferentes localidades.
 
-9. Dias de serviço
+9. Duração informada dos projetos
 
-A unidade de planejamento do TeamFlow será o dia de serviço.
+O planejamento é orientado por projetos. Serviços podem continuar registrados como informações auxiliares, mas não constituem a unidade principal de planejamento.
 
-O gestor informará quantos dias uma equipe precisará permanecer alocada para executar determinado serviço.
+O gestor informará manualmente a duração ou o período relevante do projeto conforme as regras aprovadas.
 
 Exemplo:
 
-* Projeto A: serviço com duração estimada de 5 dias.
-* Projeto B: serviço com duração estimada de 3 dias.
-* Equipe disponível: Equipe 01.
+* Projeto A: duração informada de 5 dias.
+* Projeto B: duração informada de 3 dias.
+* Equipe ou funcionário disponível: recurso a ser analisado pelo gestor.
 
-Ao alocar a equipe no Projeto A durante cinco dias, esses dias deverão ser considerados ocupados no calendário.
+Ao alocar uma equipe ou funcionário no Projeto A durante cinco dias, esses dias deverão ser considerados ocupados no calendário.
 
 O sistema não calculará produtividade diária, quantidade de instalações, produção por integrante ou capacidade produtiva.
 
-A duração do serviço será informada pelo gestor com base em sua avaliação operacional.
+A duração do projeto será informada pelo gestor com base em sua avaliação operacional.
 
 10. Unidade de planejamento e calendário
 
@@ -137,22 +146,22 @@ Não haverá diferenciação entre dias úteis, finais de semana e feriados no M
 
 As regras serão aplicadas igualmente a projetos, alocações, transporte e disponibilidade.
 
-As datas inicial e final de uma alocação deverão representar o período em que a equipe estará comprometida com aquele serviço.
+As datas inicial e final de uma alocação deverão representar o período em que o recurso estará comprometido com o projeto. A inclusão das datas no intervalo ainda depende de decisão.
 
 11. Alocações
 
-Uma alocação representa o compromisso de uma equipe com um projeto durante determinado período.
+Uma alocação representa o compromisso de uma equipe ou funcionário com um projeto durante determinado período.
 
 O gestor deverá conseguir:
 
-* Selecionar uma equipe.
 * Selecionar um projeto.
+* Selecionar uma equipe, um funcionário ou ambos conforme o caso de uso aprovado.
 * Definir o período da alocação.
 * Visualizar a duração em dias.
 * Consultar a disponibilidade da equipe.
 * Identificar conflitos antes de confirmar.
 
-Uma equipe não poderá receber alocações incompatíveis em períodos sobrepostos.
+Uma equipe ou funcionário não poderá receber alocações incompatíveis em períodos sobrepostos, conforme as regras de conflito que ainda serão aprovadas.
 
 O sistema deverá considerar também os períodos de transporte como compromissos da equipe.
 
@@ -162,7 +171,7 @@ O transporte será tratado como um evento próprio no planejamento.
 
 Cada deslocamento deverá registrar:
 
-* Equipe envolvida.
+* Equipe ou funcionário envolvido.
 * Localidade de origem.
 * Localidade de destino.
 * Data de início.
@@ -170,9 +179,9 @@ Cada deslocamento deverá registrar:
 
 A duração será informada manualmente pelo gestor.
 
-Durante o deslocamento, a equipe ficará indisponível para outros projetos.
+Durante o deslocamento, a equipe ou funcionário envolvido ficará indisponível para compromissos incompatíveis.
 
-A equipe não poderá iniciar o próximo serviço antes de concluir o deslocamento e chegar ao destino.
+O recurso envolvido não poderá iniciar um compromisso incompatível antes de concluir o deslocamento e chegar ao destino, conforme regra de chegada ainda pendente.
 
 Equipes diferentes poderão ter durações de deslocamento diferentes para trajetos semelhantes.
 
@@ -184,9 +193,9 @@ O sistema deverá identificar situações que impeçam ou comprometam uma aloca�
 
 Exemplos:
 
-* Equipe já comprometida com outro projeto no período.
-* Equipe em deslocamento.
-* Equipe sem disponibilidade no período.
+* Equipe ou funcionário já comprometido com outro projeto no período.
+* Equipe ou funcionário em deslocamento.
+* Equipe ou funcionário sem disponibilidade no período.
 * Competências necessárias não atendidas.
 * Conflito entre datas de serviço e transporte.
 
@@ -222,7 +231,7 @@ Possibilidades iniciais:
 * Equipes disponíveis e ocupadas.
 * Projetos em andamento.
 * Períodos de transporte.
-* Dias de serviço alocados por equipe.
+* Alocações de equipes e funcionários por projeto.
 * Conflitos identificados.
 
 As métricas definitivas deverão ser escolhidas durante a definição dos requisitos.
@@ -243,7 +252,7 @@ O MVP deverá contemplar:
 
 O desenvolvimento deverá observar os princípios aplicáveis da LGPD.
 
-Não coletar dados pessoais desnecessários, especialmente porque o planejamento será realizado por equipes agregadas.
+Não coletar dados pessoais desnecessários; os dados individuais de funcionários devem ser limitados ao necessário para o planejamento aprovado.
 
 17. Organização e multi-tenancy
 
@@ -369,8 +378,7 @@ Essas funcionalidades não fazem parte do escopo atual do MVP.
 * Folha de pagamento.
 * Recrutamento.
 * Gestão financeira.
-* Controle individual de funcionários.
-* Alocação individual.
+* Folha de pagamento e gestão trabalhista individual.
 * Cálculo de produtividade diária.
 * Quantidade de instalações ou produção por dia.
 * Cálculo automático de capacidade produtiva.
@@ -396,6 +404,15 @@ As seguintes questões deverão ser resolvidas antes ou durante a documentação
 10. Como os serviços irão se comunicar?
 11. Como será a autenticação entre serviços?
 12. Como serão organizados os dados e os bancos de cada serviço?
+13. Como identificar e cadastrar funcionários?
+14. Um funcionário pode pertencer a várias equipes simultaneamente, inclusive com funções diferentes?
+15. Como representar a disponibilidade individual?
+16. Como funciona a alocação individual em relação à alocação da equipe?
+17. Uma alocação individual pode existir sem alocação prévia da equipe?
+18. Como representar o deslocamento individual?
+19. Como identificar conflitos quando uma pessoa participa de múltiplas equipes?
+20. Como tratar conflitos entre datas, localidades, projetos e deslocamentos?
+21. Quando um conflito bloqueia uma operação e quando gera apenas alerta?
 
 As decisões deverão ser registradas e atualizadas conforme o projeto evoluir.
 

@@ -23,12 +23,13 @@ Os critérios de aceitação descrevem comportamentos observáveis. A ausência 
 
 ## 3. Conceitos e limites do planejamento
 
-- **Dias de serviço:** quantidade de dias necessários para executar o serviço de um projeto, informada pelo gestor.
-- **Período de alocação:** intervalo de datas em que a equipe fica comprometida com o projeto.
-- **Dias de transporte:** intervalo de datas em que a equipe fica indisponível por deslocamento entre localidades.
+- **Projeto:** unidade principal de planejamento. Serviços são informações auxiliares do projeto.
+- **Período de alocação:** intervalo de datas em que uma equipe ou funcionário fica comprometido com o projeto.
+- **Dias de transporte:** intervalo de datas em que uma equipe ou funcionário fica indisponível por deslocamento entre localidades.
 - O planejamento usa dias inteiros de calendário; dias úteis, fins de semana e feriados têm o mesmo peso.
-- A unidade principal de planejamento e alocação é a equipe inteira.
-- O MVP não terá cadastro, disponibilidade, alocação ou conflito operacional de funcionários individuais.
+- O planejamento é orientado por projetos e pode considerar equipes e funcionários individualmente.
+- Um funcionário pode participar de múltiplas equipes, mas a forma de identificar, cadastrar e relacionar esses registros ainda é pendente.
+- O sistema deve permitir analisar alocações e conflitos envolvendo projetos, equipes e funcionários.
 - O gestor cadastra e atualiza os dados operacionais e mantém a decisão final sobre alocações.
 - O deslocamento é cadastrado manualmente como evento próprio do planejamento.
 - O MVP não dependerá de integrações externas.
@@ -49,12 +50,25 @@ Os critérios de aceitação descrevem comportamentos observáveis. A ausência 
 | ID | Requisito | Status | Origem |
 |---|---|---|---|
 | RF-004 | O gestor deve poder cadastrar uma equipe com nome ou identificação. | Confirmado | Brief, seções 6 e 7 |
-| RF-005 | O gestor deve poder informar a quantidade total de integrantes sem cadastrar registros individuais. | Confirmado | Brief, seção 7 |
+| RF-005 | O gestor deve poder informar a quantidade total de integrantes sem que o cadastro agregado da equipe dependa do cadastro individual de funcionários. | Confirmado | Brief, seção 7 |
 | RF-006 | O sistema deve permitir registrar composição agregada por funções e quantidades, quando o gestor optar por detalhá-la. | Confirmado | Brief, seções 6 e 7 |
 | RF-007 | O sistema deve permitir registrar competências e qualificações associadas à equipe. | Confirmado | Brief, seção 7 |
 | RF-008 | O sistema deve permitir registrar e atualizar a disponibilidade e a situação atual da equipe. | Confirmado | Brief, seção 7 |
 | RF-009 | O gestor deve poder editar os dados da equipe. | Confirmado | Brief, seção 6 |
-| RF-010 | O sistema não deve exigir cadastro individual de funcionários para cadastrar, consultar ou alocar uma equipe. | Confirmado | Brief, seção 7 |
+| RF-010 | O cadastro agregado de uma equipe não deve exigir que todos os funcionários estejam cadastrados individualmente. | Confirmado | Brief, seção 7 |
+
+### 4.2.1 Funcionários e vínculos com equipes
+
+| ID | Requisito | Status | Origem |
+|---|---|---|---|
+| RF-050 | O sistema deve permitir considerar funcionários individualmente no planejamento orientado por projetos. | Confirmado | Brief, seção 6 |
+| RF-051 | Um funcionário pode participar de múltiplas equipes. | Confirmado; detalhamento pendente | Brief, seção 6 |
+| RF-052 | O sistema deve permitir analisar a necessidade de alocação individual de um funcionário em um projeto. | Confirmado; detalhamento pendente | Brief, seção 6 |
+| RF-053 | O deslocamento de um funcionário pode ser independente do deslocamento da equipe. | Confirmado; detalhamento pendente | Brief, seção 6 |
+| RF-054 | O sistema deve identificar conflitos que envolvam projetos, equipes e funcionários. | Confirmado; regras pendentes | Brief, seção 6 |
+| RF-055 | Nenhuma alocação individual ou alteração de planejamento deve ser aplicada sem confirmação explícita do gestor. | Confirmado | Brief, seção 6 |
+
+Os requisitos acima confirmam a necessidade do domínio, mas não fecham o cadastro, os vínculos, a disponibilidade, a precedência entre alocações ou o comportamento dos conflitos.
 
 ### 4.3 Projetos
 
@@ -64,8 +78,8 @@ Os critérios de aceitação descrevem comportamentos observáveis. A ausência 
 | RF-012 | Um projeto deve poder registrar nome ou identificação, cliente quando aplicável, localidade, descrição do serviço e competências ou qualificações necessárias. | Confirmado | Brief, seção 8 |
 | RF-013 | Um projeto deve permitir registrar separadamente a data prevista de início. | Confirmado | Brief, seção 8 |
 | RF-014 | Um projeto deve permitir registrar separadamente a data prevista de término. | Confirmado | Brief, seção 8 |
-| RF-015 | Um projeto deve permitir registrar separadamente uma duração estimada do serviço. | Confirmado | Brief, seções 8 e 9 |
-| RF-016 | Um projeto deve permitir registrar a quantidade de dias de serviço necessários. | Confirmado | Brief, seções 8 e 9 |
+| RF-015 | Um projeto deve permitir registrar separadamente uma duração estimada. | Confirmado | Brief, seção 8 |
+| RF-016 | Um projeto pode manter informações auxiliares de serviços e seus dias informados manualmente. | Confirmado | Brief, seção 8 |
 | RF-017 | O sistema deve permitir cadastrar projetos simultâneos em diferentes localidades. | Confirmado | Brief, seções 2, 6 e 8 |
 | RF-018 | A regra de precedência entre datas previstas e duração estimada, inclusive em caso de divergência, deve ser definida antes da implementação correspondente. | Pendente | Brief, seções 8, 9 e 25 |
 
@@ -75,11 +89,11 @@ Os critérios de aceitação descrevem comportamentos observáveis. A ausência 
 |---|---|---|---|
 | RF-019 | O sistema deve utilizar dias inteiros de calendário como unidade de planejamento. | Confirmado | Brief, seções 6, 9 e 10 |
 | RF-020 | O sistema deve considerar dias úteis, fins de semana e feriados como dias equivalentes no planejamento do MVP. | Confirmado | Brief, seção 10 |
-| RF-021 | O gestor deve poder criar uma alocação selecionando equipe, projeto, data de início e data de término ou duração do período de alocação. | Confirmado | Brief, seções 6, 9 e 11 |
+| RF-021 | O gestor deve poder analisar e, após confirmação, criar uma alocação de equipe ou funcionário em um projeto, com data de início e data de término ou duração do período. | Confirmado; detalhamento pendente | Brief, seções 6, 10 e 11 |
 | RF-022 | O sistema deve exibir a duração do período de alocação em dias inteiros. | Confirmado | Brief, seção 11 |
 | RF-023 | O gestor deve poder editar uma alocação existente. | Confirmado | Brief, seção 6 |
-| RF-024 | O sistema deve permitir visualizar a disponibilidade da equipe antes da confirmação da alocação. | Confirmado | Brief, seção 11 |
-| RF-025 | O sistema deve identificar uma alocação incompatível com outro compromisso da mesma equipe no período sobreposto. | Confirmado | Brief, seções 6, 11 e 13 |
+| RF-024 | O sistema deve permitir visualizar a disponibilidade dos recursos envolvidos antes da confirmação da alocação. | Confirmado; disponibilidade individual pendente | Brief, seção 11 |
+| RF-025 | O sistema deve identificar uma alocação incompatível com outro compromisso do mesmo projeto, equipe ou funcionário no período sobreposto. | Confirmado; regras pendentes | Brief, seções 6, 11 e 13 |
 | RF-026 | A regra que define quais incompatibilidades bloqueiam a confirmação e quais permitem prosseguir mediante confirmação do gestor permanece pendente. | Pendente | Brief, seções 13 e 25 |
 | RF-027 | O sistema não deve dividir automaticamente uma equipe entre projetos no MVP. | Confirmado | Brief, seções 6, 7 e 24 |
 
@@ -88,9 +102,9 @@ Os critérios de aceitação descrevem comportamentos observáveis. A ausência 
 | ID | Requisito | Status | Origem |
 |---|---|---|---|
 | RF-028 | O gestor deve poder cadastrar um deslocamento como evento próprio do planejamento. | Confirmado | Brief, seção 12 |
-| RF-029 | Um deslocamento deve registrar equipe, localidade de origem, localidade de destino, data de início e duração estimada em dias inteiros. | Confirmado | Brief, seção 12 |
-| RF-030 | O sistema deve considerar o período de transporte na análise de compromissos da equipe. | Confirmado | Brief, seções 11–13 |
-| RF-031 | O sistema deve identificar quando o início de um próximo serviço ocorre antes da conclusão do deslocamento e da chegada ao destino. | Confirmado | Brief, seção 12 |
+| RF-029 | Um deslocamento deve registrar o recurso envolvido, localidade de origem, localidade de destino, data de início e duração estimada em dias inteiros. | Confirmado; modelo pendente | Brief, seção 12 |
+| RF-030 | O sistema deve considerar o período de transporte na análise de compromissos da equipe ou funcionário. | Confirmado | Brief, seções 11–13 |
+| RF-031 | O sistema deve identificar quando o início de um próximo compromisso ocorre antes da conclusão do deslocamento e da chegada ao destino. | Confirmado; regras pendentes | Brief, seção 12 |
 | RF-032 | A regra exata sobre a disponibilidade da equipe no dia de chegada e sobre bloqueio ou alerta para o próximo serviço permanece pendente. | Pendente | Brief, seções 12, 13 e 25 |
 | RF-033 | O sistema não deve calcular automaticamente rotas, distâncias ou tempos de deslocamento no MVP. | Confirmado | Brief, seção 12 |
 
@@ -98,10 +112,10 @@ Os critérios de aceitação descrevem comportamentos observáveis. A ausência 
 
 | ID | Requisito | Status | Origem |
 |---|---|---|---|
-| RF-034 | O sistema deve verificar a disponibilidade da equipe ao analisar uma alocação. | Confirmado | Brief, seção 13 |
+| RF-034 | O sistema deve verificar a disponibilidade dos recursos envolvidos ao analisar uma alocação. | Confirmado; modelo pendente | Brief, seção 13 |
 | RF-035 | O sistema deve considerar compromissos de projetos e eventos de transporte na análise de conflitos. | Confirmado | Brief, seções 11–13 |
-| RF-036 | O sistema deve verificar se as competências e qualificações necessárias do projeto são atendidas pela equipe. | Confirmado | Brief, seções 13 e 14 |
-| RF-037 | O sistema deve identificar e diferenciar conflito de período, indisponibilidade, incompatibilidade de competências e conflito com transporte. | Confirmado | Brief, seção 13 |
+| RF-036 | O sistema deve verificar se as competências e qualificações necessárias do projeto são atendidas pelos recursos avaliados. | Confirmado; critérios pendentes | Brief, seções 13 e 14 |
+| RF-037 | O sistema deve identificar e diferenciar conflitos de período, indisponibilidade, competência, qualificação e transporte envolvendo projetos, equipes e funcionários. | Confirmado; regras pendentes | Brief, seção 13 |
 | RF-038 | O sistema deve explicar ao gestor o motivo de cada incompatibilidade identificada. | Confirmado | Brief, seção 13 |
 | RF-039 | As regras detalhadas de sobreposição, múltiplas etapas e múltiplas localidades devem ser documentadas antes da implementação correspondente. | Pendente | Brief, seções 13 e 25 |
 
@@ -111,8 +125,8 @@ As sugestões são uma funcionalidade prevista com prioridade **SHOULD**. Elas n
 
 | ID | Prioridade | Requisito | Status | Origem |
 |---|---|---|---|---|
-| RF-040 | SHOULD | O sistema poderá apresentar sugestões de equipes para um período e projeto solicitados. | Previsto/Pendente | Brief, seção 14 |
-| RF-041 | SHOULD | As sugestões devem considerar disponibilidade, período solicitado, competências, qualificações, compromissos e deslocamentos cadastrados. | Previsto/Pendente | Brief, seção 14 |
+| RF-040 | SHOULD | O sistema poderá apresentar sugestões de equipes ou funcionários para um período e projeto solicitados. | Previsto/Pendente | Brief, seção 14 |
+| RF-041 | SHOULD | As sugestões devem considerar disponibilidade, período solicitado, competências, qualificações, compromissos e deslocamentos cadastrados dos recursos avaliados. | Previsto/Pendente | Brief, seção 14 |
 | RF-042 | SHOULD | Cada sugestão deve apresentar justificativa compreensível baseada nos dados cadastrados. | Previsto/Pendente | Brief, seção 14 |
 | RF-043 | SHOULD | O gestor deve selecionar e confirmar uma sugestão antes que ela altere o planejamento. | Confirmado | Brief, seções 4, 6 e 14 |
 | RF-044 | MUST | O sistema não deve executar otimização automática complexa nem aplicar uma sugestão sem confirmação do gestor. | Confirmado | Brief, seções 6, 14 e 24 |
@@ -124,8 +138,8 @@ Os critérios mínimos de seleção, ordenação, explicação e comportamento q
 | ID | Requisito | Status | Origem |
 |---|---|---|---|
 | RF-045 | O sistema deve oferecer uma visualização de calendário das alocações. | Confirmado | Brief, seção 15 |
-| RF-046 | O sistema deve permitir consultar equipes disponíveis e ocupadas. | Confirmado | Brief, seção 15 |
-| RF-047 | O sistema deve permitir visualizar projetos em andamento, períodos de transporte, dias de serviço alocados por equipe e conflitos identificados. | Confirmado | Brief, seção 15 |
+| RF-046 | O sistema deve permitir consultar equipes e funcionários disponíveis e ocupados, conforme os dados e regras aprovados. | Confirmado; modelo pendente | Brief, seção 15 |
+| RF-047 | O sistema deve permitir visualizar projetos em andamento, períodos de transporte, alocações de equipes e funcionários e conflitos identificados. | Confirmado; detalhamento pendente | Brief, seção 15 |
 | RF-048 | O sistema deve registrar alterações relevantes, identificando responsável e data e horário da alteração. | Confirmado | Brief, seção 16 |
 | RF-049 | As métricas definitivas e suas metas devem ser definidas antes de serem tratadas como requisitos fechados de dashboard. | Pendente | Brief, seção 15 |
 
@@ -151,6 +165,15 @@ Cada requisito funcional deve possuir pelo menos um critério verificável. Os c
 - **CA-RF-008-01:** Dado um gestor autorizado, quando informa ou altera a disponibilidade ou situação da equipe, então o novo estado fica disponível para consulta no planejamento.
 - **CA-RF-009-01:** Dado uma equipe existente e um gestor autorizado, quando altera seus dados e confirma, então a consulta posterior apresenta os dados atualizados.
 - **CA-RF-010-01:** Quando uma equipe é cadastrada ou alocada, o sistema não solicita nem cria automaticamente registros individuais de funcionários.
+
+### Funcionários e vínculos
+
+- **CA-RF-050-01:** Quando o planejamento de um projeto exigir análise individual, o sistema deve permitir considerar um funcionário como recurso, sem aplicar alteração automaticamente.
+- **CA-RF-051-01:** Antes da implementação dos vínculos, a documentação deve definir como um funcionário participa de múltiplas equipes e como suas funções são representadas.
+- **CA-RF-052-01:** Antes de confirmar uma alocação individual, o sistema deve apresentar o projeto, o período e os conflitos identificados conforme as regras aprovadas.
+- **CA-RF-053-01:** Dado um deslocamento individual, a análise não deve presumir que o deslocamento da equipe tenha o mesmo período ou destino.
+- **CA-RF-054-01:** Quando houver conflito envolvendo projeto, equipe ou funcionário, o resultado deve identificar os recursos e compromissos relacionados.
+- **CA-RF-055-01:** Quando uma alocação individual não for confirmada pelo gestor, o planejamento deve permanecer inalterado.
 
 ### Projetos
 
@@ -206,8 +229,8 @@ Cada requisito funcional deve possuir pelo menos um critério verificável. Os c
 ### Visualizações e histórico
 
 - **CA-RF-045-01:** Dado que existam alocações, o gestor consegue visualizá-las em um calendário.
-- **CA-RF-046-01:** Dado um período consultado, o sistema diferencia as equipes disponíveis das ocupadas com base nos compromissos cadastrados.
-- **CA-RF-047-01:** Dado um planejamento com projetos, transportes, alocações e conflitos, o gestor consegue visualizar esses elementos e os dias de serviço alocados por equipe.
+- **CA-RF-046-01:** Dado um período consultado, o sistema diferencia os recursos disponíveis dos ocupados com base nos compromissos cadastrados e nas regras aprovadas.
+- **CA-RF-047-01:** Dado um planejamento com projetos, transportes, alocações e conflitos, o gestor consegue visualizar esses elementos e as alocações de equipes e funcionários por projeto.
 - **CA-RF-048-01:** Quando uma alteração relevante é confirmada, o histórico registra o responsável e a data e horário da alteração.
 - **CA-RF-049-01:** Antes de fechar métricas e metas do dashboard, a documentação deve identificar cada métrica, sua definição, sua fonte e sua meta, quando aplicável.
 
@@ -242,7 +265,7 @@ Cada requisito funcional deve possuir pelo menos um critério verificável. Os c
 | ID | Requisito | Status | Origem |
 |---|---|---|---|
 | RNF-015 | As APIs devem validar entradas e proteger operações conforme o controle de acesso definido. | Confirmado/Pendente | Brief, seções 5 e 16 |
-| RNF-016 | O sistema deve evitar coletar dados pessoais desnecessários, especialmente dados individuais de funcionários fora do escopo. | Confirmado | Brief, seções 7, 16 e 24 |
+| RNF-016 | O sistema deve evitar coletar dados pessoais desnecessários e limitar os dados individuais de funcionários ao necessário para o planejamento aprovado. | Confirmado | Brief, seções 7, 16 e 24 |
 | RNF-017 | O desenvolvimento deve observar os princípios aplicáveis da LGPD. | Confirmado | Brief, seção 16 |
 | RNF-018 | As operações relevantes devem permitir identificar o responsável e o momento da alteração. | Confirmado | Brief, seção 16 |
 | RNF-019 | A segregação futura entre organizações deve ser considerada antes de fechar o modelo de dados e as regras de acesso. | Pendente | Brief, seções 17 e 25 |
@@ -277,7 +300,7 @@ Quando a decisão já é suficiente, os critérios abaixo permitem verificação
 - **CV-RNF-013-01:** A configuração local documenta dependências, comunicação entre containers, variáveis de ambiente e persistência do PostgreSQL.
 - **CV-RNF-014-01:** Não existem referências a TypeScript como tecnologia de implementação aprovada.
 - **CV-RNF-015-01:** Pendente até os perfis, permissões e regras de validação de entrada serem detalhados.
-- **CV-RNF-016-01:** A revisão de escopo não inclui cadastro individual de funcionários nem coleta de dados pessoais desnecessários.
+- **CV-RNF-016-01:** A revisão de escopo limita os dados individuais de funcionários ao necessário para o planejamento aprovado e não inclui dados trabalhistas ou pessoais sem finalidade definida.
 - **CV-RNF-017-01:** Pendente até serem definidos os requisitos de privacidade aplicáveis ao tratamento de dados do MVP.
 - **CV-RNF-018-01:** Uma alteração relevante registrada permite identificar responsável e data e horário.
 - **CV-RNF-019-01:** Pendente até ser decidida a representação de organizações e a segregação dos dados.
@@ -292,7 +315,7 @@ Quando a decisão já é suficiente, os critérios abaixo permitem verificação
 
 Os itens abaixo não devem ser implementados como parte do MVP:
 
-- cadastro, disponibilidade, alocação ou conflitos individuais de funcionários;
+- folha de pagamento, gestão trabalhista e coleta de dados individuais sem finalidade de planejamento;
 - cálculo automático de rotas, distâncias ou tempos de deslocamento;
 - otimização automática complexa;
 - assistente de IA;
@@ -325,6 +348,14 @@ Antes de considerar este documento pronto para implementação, devem ser resolv
 14. Comunicação e autenticação entre serviços.
 15. Organização dos dados e propriedade dos bancos por serviço.
 16. Critérios de aceitação finais e regras de negócio detalhadas.
+17. Identificação e cadastro de funcionários.
+18. Participação de um funcionário em múltiplas equipes e funções.
+19. Disponibilidade individual e suas exceções.
+20. Relação entre alocação individual e alocação da equipe.
+21. Possibilidade de alocação individual sem alocação prévia da equipe.
+22. Deslocamento individual e sua independência do deslocamento da equipe.
+23. Conflitos envolvendo pessoas em múltiplas equipes, datas, localidades e projetos.
+24. Classificação de conflitos como bloqueios ou alertas.
 
 ## 10. Rastreabilidade e controle de implementação
 

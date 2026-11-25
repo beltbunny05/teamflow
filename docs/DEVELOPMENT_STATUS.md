@@ -6,9 +6,9 @@
 
 ## 1. Objetivo e visão
 
-O TeamFlow é uma plataforma web SaaS B2B para organizar equipes inteiras em projetos simultâneos, considerando projetos, localidades, serviços, dias de serviço e, futuramente, alocações, deslocamentos e conflitos de planejamento.
+O TeamFlow é uma plataforma web SaaS B2B para organizar a participação de equipes e funcionários em projetos simultâneos, considerando projetos, localidades, durações informadas e, futuramente, alocações, deslocamentos e conflitos de planejamento.
 
-O MVP não cadastra nem aloca funcionários individualmente. O gestor permanece responsável pelas decisões de planejamento.
+A direção de produto agora exige considerar funcionários individualmente. O cadastro, a disponibilidade, os vínculos com equipes, a alocação individual e os deslocamentos individuais ainda não foram implementados e permanecem dependentes de decisões de negócio detalhadas. O gestor permanece responsável pelas decisões de planejamento.
 
 ## 2. Arquitetura aprovada
 
@@ -68,7 +68,7 @@ Implementado e testado:
 - Persistência PostgreSQL com migração Flyway.
 - CORS local para integração com o frontend.
 
-Não foram implementados funcionários individuais, alocações, transporte, conflitos ou cálculos de produtividade.
+Não foram implementados funcionários individuais, vínculos entre pessoas e equipes, alocações, transporte, conflitos ou cálculos de produtividade. A ausência dessas implementações não representa exclusão de escopo: o domínio individual foi confirmado para futura especificação.
 
 ## 7. Estado do Project Service
 
@@ -90,7 +90,7 @@ Implementado e testado nesta sessão:
 - Persistência PostgreSQL com migração Flyway.
 - CORS local para integração com o frontend.
 
-As listas de localidades e serviços não definem regras de múltiplas etapas, alocações ou compatibilidade. Essas decisões continuam pendentes na documentação de negócio.
+As listas de localidades e serviços não definem regras de múltiplas etapas, alocações ou compatibilidade. Serviços continuam sendo informações auxiliares de projetos; as decisões sobre equipes e funcionários permanecem pendentes na documentação de negócio.
 
 ## 8. Estado do Planning Service
 
@@ -108,7 +108,7 @@ O frontend React existente foi evoluído, sem criar uma aplicação separada:
 - Cadastro de localidades e serviços dentro do formulário de projeto.
 - Estados de carregamento, lista vazia e erros.
 - Consumo das APIs REST usando o contexto temporário de organização.
-- Interface preparada para receber futuramente uma visão operacional centralizada.
+- Interface com navegação lateral e área central de trabalho, preparada para receber futuramente uma visão operacional centralizada.
 
 Dashboard, calendário de planejamento, alocações, transportes e conflitos ainda não estão disponíveis.
 
@@ -134,8 +134,13 @@ Comandos e verificações realizados:
 - Não há autenticação real nem autorização de produção.
 - `X-Organization-Id` é somente um contexto temporário de desenvolvimento.
 - Os valores oficiais de situação da equipe ainda não foram definidos.
-- A precedência entre datas previstas, duração estimada e dias de serviço permanece pendente.
+- A precedência entre datas previstas, duração estimada do projeto e informações auxiliares de serviços permanece pendente.
 - As regras de múltiplas equipes, etapas e localidades permanecem pendentes.
+- A identificação e o cadastro de funcionários permanecem pendentes.
+- A participação de funcionários em múltiplas equipes permanece pendente de detalhamento.
+- A disponibilidade e a alocação individual permanecem pendentes de detalhamento.
+- O deslocamento individual e sua independência do deslocamento da equipe permanecem pendentes de detalhamento.
+- Os conflitos entre pessoas, equipes, projetos, datas e localidades permanecem pendentes.
 - As regras de intervalo, conflitos bloqueantes, alertas e disponibilidade no dia de chegada permanecem pendentes.
 - Não há auditoria operacional completa com usuário autenticado.
 - Não há dashboard operacional nem integração entre Planning, Team e Project para validações.
@@ -163,7 +168,7 @@ O próximo incremento efetivo deverá ser definido após a revisão deste estado
 - Perfis e permissões do MVP.
 - Valores válidos para situação da equipe.
 - Modelo detalhado de disponibilidade e suas exceções.
-- Precedência entre datas, duração estimada e dias de serviço.
+- Precedência entre datas, duração estimada do projeto e informações auxiliares de serviços.
 - Regras para múltiplas equipes, etapas e localidades.
 - Inclusão das datas inicial e final nos intervalos de planejamento.
 - Disponibilidade da equipe no dia de chegada do transporte.
@@ -171,3 +176,8 @@ O próximo incremento efetivo deverá ser definido após a revisão deste estado
 - Critérios, prioridade e ordenação das sugestões de alocação.
 - Fluxos de autenticação, autorização e comunicação entre serviços.
 - Política final de auditoria, observabilidade e implantação de produção.
+- Identificação, cadastro, disponibilidade e vínculos de funcionários.
+- Relação entre alocação individual e alocação da equipe.
+- Possibilidade de alocação individual sem alocação prévia da equipe.
+- Modelo de deslocamento individual.
+- Classificação de conflitos como bloqueios ou alertas.
