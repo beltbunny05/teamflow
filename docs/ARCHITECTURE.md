@@ -126,3 +126,17 @@ As propostas são geradas sem mutação do planejamento confirmado. A aprovaçã
 O custo prático é aproximadamente O(P × R × (A + M × U)), devido às consultas de compromissos e aos vínculos/indisponibilidades remotos. A principal limitação é a ausência de cache/agregação, aceitável para o MVP, mas relevante no cenário de escala.
 
 Intervalos são inclusivos. A chegada de transporte confirmado ocorre em `startDate + durationDays`; transporte sem duração é pendência e não pode ser aprovado como plenamente viável. Alocações novas persistem integrantes efetivos em `allocation_member_snapshots`; exceções temporárias são aplicadas na avaliação sem alterar a composição permanente. Registros anteriores à V4 não são preenchidos artificialmente e permanecem identificados pela ausência de snapshot.
+
+### 9.1 Algoritmo de intervalos e alternativas individuais
+
+O Planning Service avalia cada projeto na ordem lexicográfica de prazo, prioridade, margem, identificação e UUID. Para cada recurso, percorre os dias da janela inclusiva e rejeita dias com conflito bloqueante ou ocupação já reservada na proposta em construção. Em projetos contínuos, somente uma sequência consecutiva com a duração completa é aceita. Em projetos fracionáveis, os dias viáveis são agrupados em intervalos consecutivos; a soma das durações dos intervalos é a duração efetiva do projeto.
+
+A seleção coletiva de equipes é preferencial. Se nenhuma equipe produzir intervalos viáveis, funcionários ativos são avaliados como alternativas individuais, considerando seus vínculos, indisponibilidades, transportes, localização, compromissos e snapshots disponíveis. A alternativa individual é explicitamente marcada para revisão e não implica competência, produtividade ou suficiência automática.
+
+Cada intervalo é um item de proposta e é persistido como uma alocação separada somente na aprovação. A geração não modifica o banco de planejamento. A ocupação transitória evita que projetos posteriores da mesma proposta reutilizem uma equipe ou um funcionário compartilhado no mesmo período. Os itens usam identificadores determinísticos para permitir comparação reprodutível entre gerações.
+
+O ciclo de vida de propostas também representa replanejamento: compromissos flexíveis coincidentes são `RETAIN`; quando o recurso ou período muda, a proposta contém `CANCEL` do compromisso anterior e `CREATE` do substituto. Compromissos fixados são obrigatoriamente preservados. Transportes pendentes permanecem itens explícitos; a duração pode ser informada no rascunho e só é persistida na aprovação, juntamente com as alocações selecionadas que dependem dela.
+
+As mutações do Planning Service adquirem `SELECT ... FOR UPDATE` na linha de estado da organização. Assim, criação, edição, cancelamento, transporte, geração e aprovação não avançam simultaneamente dentro da mesma organização. A revisão-base da proposta e a revalidação final complementam o lock. Essa garantia é local ao Planning Service; chamadas REST a Team Service e Project Service não participam de uma transação distribuída e falhas remotas podem impedir a aprovação antes da confirmação local.
+
+Os critérios de qualidade usados pela heurística são, nesta ordem: cumprir prazos, respeitar prioridade quando houver empate de prazo, antecipar a execução dentro da janela, reduzir ociosidade por seleção dos primeiros dias viáveis e evitar deslocamentos desnecessários. Trata-se de uma heurística gulosa determinística do MVP, não de uma garantia de ótimo global. A complexidade prática é `O(P × (R + E) × D × C)`.

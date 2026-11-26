@@ -2,7 +2,7 @@
 
 **Data de referência:** 2026-11-25
 **Escopo:** MVP incremental  
-**Status:** Núcleo operacional inicial implementado; integração completa e algoritmo ainda parciais
+**Status:** Núcleo operacional e algoritmo heurístico do MVP implementados; endurecimento de produção permanece fora do escopo
 
 ## 1. Objetivo e visão
 
@@ -204,13 +204,13 @@ Estado honesto: snapshot e cidade base estão implementados e compilados, mas ai
 | RN-DEC-07 transporte pendente não é zero | implementada |
 | RN-DEC-08 duração manual do projeto | implementada |
 | RN-DEC-09 prazo e prioridade | implementada; heurística revisada |
-| RN-DEC-10 continuidade/fracionamento | parcial; contínuo implementado, fracionado ainda pendente |
+| RN-DEC-10 continuidade/fracionamento | implementada no algoritmo de propostas e aprovação por intervalos |
 | RN-DEC-11 dias corridos inclusivos | implementada |
 | RN-DEC-12 localidades | implementada |
 | RN-DEC-13 cidade base organizacional | implementada no Team Service; configuração frontend pendente |
 | RN-DEC-14 localização inicial excepcional | implementada |
 | RN-DEC-15 compromissos fixados | implementada |
-| RN-DEC-16 objetivos da heurística | parcial; ordem corrigida, avaliação de alternativas ainda limitada |
+| RN-DEC-16 objetivos da heurística | implementada como avaliação lexicográfica determinística; não garante ótimo global |
 | RN-DEC-17 aprovação explícita | implementada |
 | RN-DEC-18 aprovação seletiva/dependências | implementada parcialmente; integração ampliada pendente |
 | RN-DEC-19 localização planejada posterior | parcial; base e localização inicial disponíveis, cadeia completa de deslocamentos pendente |
@@ -293,3 +293,52 @@ Adicionar snapshot imutável dos integrantes no compromisso, modelar a cidade ba
 ### Próxima retomada
 
 Adicionar clientes REST isolados para Team/Project com timeout e propagação de organização; completar disponibilidade, revalidação e algoritmo heurístico; depois criar testes de integração com PostgreSQL para isolamento, conflitos, transporte pendente, fixação e aprovação.
+
+## 19. Finalização do algoritmo de planejamento automático — 2026-11-26
+
+O algoritmo do Planning Service passou a produzir intervalos de execução efetivos, sem alterar alocações confirmadas durante a geração da proposta:
+
+- projetos contínuos procuram uma faixa única de dias consecutivos dentro da janela e do prazo;
+- projetos fracionáveis selecionam os primeiros dias viáveis e os agrupam em faixas consecutivas, sem contar espera, indisponibilidade ou transporte como execução;
+- cada faixa vira um item `CREATE` independente e, após aprovação, uma alocação persistida independente, permitindo consulta posterior pelo endpoint de alocações;
+- compromissos existentes, inclusive fixados, e ocupações criadas anteriormente na mesma proposta são considerados como restrições;
+- integrantes compartilhados entre equipes são tratados como ocupados no mesmo período;
+- quando não há equipe viável, funcionários ativos são avaliados individualmente. A alternativa recebe `ALERT_INDIVIDUAL_REVIEW` e sua explicação deixa explícito que um funcionário isolado não comprova a execução do projeto;
+- IDs de itens são derivados deterministicamente dos dados do item, permitindo comparar duas gerações equivalentes.
+
+A função de avaliação é lexicográfica e assistiva: (1) prazo limite ascendente, (2) prioridade descendente como desempate, (3) menor margem, (4) identificação e UUID estáveis; dentro da janela, os dias mais antecipados são escolhidos. Conflitos `BLOCKING` continuam obrigatórios. Essa heurística não garante ótimo global.
+
+Complexidade prática: aproximadamente `O(P × (R + E) × D × C)`, em que `P` é o número de projetos, `R` equipes, `E` funcionários avaliados como alternativa, `D` dias da janela e `C` o custo das consultas e verificações de conflitos. As chamadas REST repetidas continuam sendo uma limitação conhecida para escalas maiores.
+
+### Validação específica desta etapa
+
+- Planning Service Maven: 11 testes, 0 falhas, 0 erros.
+- Cenários cobertos: execução contínua e fracionada, contagem de dias efetivos, indisponibilidade entre faixas, persistência separada das faixas após aprovação, alternativas individuais, equipes com funcionário compartilhado, snapshots e compromissos fixados, inviabilidade, prazo/prioridade, comparação determinística e isolamento organizacional.
+- Permanecem fora desta etapa otimização global, cálculo de produtividade/competências não cadastradas, alterações automáticas de composição e confirmação automática de propostas.
+
+## 20. Integridade operacional de propostas — 2026-11-26
+
+Implementado nesta etapa:
+
+- itens de proposta passaram a carregar rota, duração e chegada de transportes;
+- a duração pode ser definida no rascunho por `PUT /planning/proposals/{id}`, sem criar transporte confirmado antecipadamente;
+- aprovação persiste transportes confirmados e alocações dependentes em uma transação local, rejeitando pendências, dependências ausentes e conflitos bloqueantes;
+- aprovação seletiva registra `PARTIALLY_APPROVED`, itens aprovados/não aprovados e `approvalComplete: false` quando o conjunto não é integral ou plenamente viável;
+- replanejamento de compromissos flexíveis produz `RETAIN` quando o compromisso permanece, ou `CANCEL` + `CREATE` quando recurso/período muda; compromissos fixados só podem ser preservados;
+- propostas editadas não podem remover ou alterar compromissos fixados;
+- mutações do Planning Service usam lock transacional por organização, além da revisão-base e da revalidação final;
+- conflitos de transportes individuais também são considerados quando uma equipe aloca seus integrantes;
+- a tela operacional existente permite revisar duração de transporte, editar datas dos itens, selecionar itens e visualizar operações de replanejamento.
+
+### Validação desta etapa
+
+- Planning Service Maven: 16 testes, 0 falhas, 0 erros.
+- Frontend React: `npm run build` aprovado.
+- Cobertura comportamental: transportes pendentes/confirmados, dependências de aprovação, persistência conjunta, replanejamento flexível, preservação de fixados, edição protegida, transportes individuais, snapshots, determinismo e isolamento organizacional.
+
+### Limitações e garantias
+
+- A consistência serializada é local ao Planning Service. Não existe transação distribuída com Team Service ou Project Service; falhas remotas são tratadas antes da confirmação local, mas não há rollback de uma alteração já realizada em outro serviço.
+- Aprovação parcial encerra a proposta como `PARTIALLY_APPROVED`; os itens não selecionados não são aplicados e o projeto não é apresentado como plenamente concluído.
+- Alteração de duração do projeto continua sendo decisão manual do gestor e é representada na proposta por revisão dos intervalos; o Planning Service não altera diretamente o Project Service.
+- O dia de chegada segue a regra operacional já implementada: chegada é incluída no intervalo indisponível. A política definitiva de disponibilidade no dia de chegada continua registrada como pendência de negócio.

@@ -1,6 +1,8 @@
 package com.teamflow.planning.repository;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.teamflow.planning.api.*;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,8 +17,14 @@ import java.util.*;
 @Repository
 public class PlanningRepository {
     private final JdbcTemplate jdbc;
+    private final ObjectMapper mapper;
 
-    public PlanningRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    public PlanningRepository(JdbcTemplate jdbc, ObjectMapper mapper) { this.jdbc = jdbc; this.mapper = mapper; }
+
+    public void lockOrganization(UUID org) {
+        ensureState(org);
+        jdbc.queryForObject("SELECT organization_id FROM planning_state WHERE organization_id=? FOR UPDATE", UUID.class, org);
+    }
 
     public AllocationResponse saveAllocation(UUID org, AllocationRequest r) {
         return saveAllocation(org, r, List.of());
@@ -129,7 +137,7 @@ public class PlanningRepository {
                     end_date, target_project_id, target_start_date, target_end_date, reason, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id, org, allocationId, r.employeeId(), r.kind(), r.startDate(), r.endDate(), r.targetProjectId(), r.targetStartDate(), r.targetEndDate(), r.reason(), created);
-        return exception(org, id).orElseThrow();
+        bumpRevision(org); return exception(org, id).orElseThrow();
     }
     public List<AllocationExceptionResponse> exceptions(UUID org, UUID allocationId) { return jdbc.query("SELECT * FROM allocation_exceptions WHERE organization_id=? AND allocation_id=? ORDER BY start_date, id", this::exceptionRow, org, allocationId); }
 
@@ -145,12 +153,17 @@ public class PlanningRepository {
     public Optional<ProposalResponse> proposal(UUID org, UUID id) { return jdbc.query("SELECT * FROM planning_proposals WHERE organization_id=? AND id=?", this::proposalRow, org, id).stream().findFirst(); }
     public ProposalResponse updateProposal(UUID org, UUID id, ProposalUpdateRequest r) {
         OffsetDateTime now = now();
-        String payload = "{\"explanation\":" + quote(r.explanation()) + ",\"items\":" + new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(r.items()) + "}";
-        if (jdbc.update("UPDATE planning_proposals SET payload=?::jsonb, updated_at=? WHERE organization_id=? AND id=? AND status='DRAFT'", payload, now, org, id) == 0) throw new OptimisticLockingFailureException("Proposal is no longer editable");
+        ProposalResponse current = proposal(org, id).orElseThrow(() -> new NoSuchElementException("Proposal not found"));
+        ObjectNode payload = current.payload() == null ? mapper.createObjectNode() : current.payload().deepCopy();
+        payload.put("explanation", r.explanation()); payload.set("items", mapper.valueToTree(r.items()));
+        if (jdbc.update("UPDATE planning_proposals SET payload=?::jsonb, updated_at=? WHERE organization_id=? AND id=? AND status='DRAFT'", payload.toString(), now, org, id) == 0) throw new OptimisticLockingFailureException("Proposal is no longer editable");
         return proposal(org, id).orElseThrow();
     }
     public void markProposal(UUID org, UUID id, String status) {
         if (jdbc.update("UPDATE planning_proposals SET status=?, approved_at=?, updated_at=? WHERE organization_id=? AND id=? AND status='DRAFT'", status, "APPROVED".equals(status) ? now() : null, now(), org, id) == 0) throw new OptimisticLockingFailureException("Proposal is no longer editable");
+    }
+    public void markProposal(UUID org, UUID id, String status, JsonNode payload) {
+        if (jdbc.update("UPDATE planning_proposals SET status=?, payload=?::jsonb, approved_at=?, updated_at=? WHERE organization_id=? AND id=? AND status='DRAFT'", status, payload.toString(), "APPROVED".equals(status) || "PARTIALLY_APPROVED".equals(status) ? now() : null, now(), org, id) == 0) throw new OptimisticLockingFailureException("Proposal is no longer editable");
     }
     public void log(UUID org, String action, String entityType, UUID entityId, JsonNode details) { jdbc.update("INSERT INTO planning_change_log (id, organization_id, action, entity_type, entity_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?::jsonb, ?)", UUID.randomUUID(), org, action, entityType, entityId, details.toString(), now()); }
 
