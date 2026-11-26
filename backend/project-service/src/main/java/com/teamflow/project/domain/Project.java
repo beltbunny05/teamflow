@@ -18,6 +18,9 @@ public record Project(
         List<String> qualifications,
         List<ProjectLocation> localities,
         List<ProjectServiceItem> services,
+        String priority,
+        boolean continuousExecution,
+        Integer desiredPeople,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

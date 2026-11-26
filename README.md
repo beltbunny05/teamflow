@@ -67,3 +67,9 @@ O comando `down -v` remove somente o volume nomeado do ambiente local e deve ser
 - [Requirements](docs/REQUIREMENTS.md)
 - [Business Rules](docs/BUSINESS_RULES.md)
 - [Architecture](docs/ARCHITECTURE.md)
+
+## Núcleo operacional disponível
+
+Além dos CRUDs de equipes e projetos, a etapa atual disponibiliza cadastro de funcionários e memberships no Team Service e endpoints persistentes de alocações, transportes, conflitos e propostas no Planning Service. O frontend possui telas simples de Funcionários e Planejamento; o dashboard visual está deliberadamente fora do escopo.
+
+Para testar manualmente, envie `X-Organization-Id` nas chamadas. Exemplos: `POST /employees`, `PUT /employees/{employeeId}/teams/{teamId}`, `POST /planning/allocations`, `POST /planning/transports`, `POST /planning/conflicts`, `POST /planning/proposals` e `POST /planning/proposals/{id}/approve`. Uma proposta é criada como `DRAFT` e não altera alocações automaticamente.

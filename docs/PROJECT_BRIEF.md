@@ -430,3 +430,11 @@ A sequência de trabalho prevista é:
 8. Iniciar a implementação do MVP somente após autorização explícita e conclusão das etapas anteriores.
 
 A implementação deverá começar somente depois que as decisões fundamentais de produto, regras de negócio e arquitetura estiverem suficientemente claras.
+
+## 27. Consolidação aprovada para o núcleo operacional (2026-11-25)
+
+As decisões RN-DEC-01 a RN-DEC-20 consolidam e substituem pendências incompatíveis deste documento. O planejamento passa a considerar funcionários individualmente, múltiplos vínculos com equipes, alocações coletivas com exceções temporárias, projeto em uma única localidade, prioridade, continuidade e capacidade desejada opcional. Transporte pode ser identificado automaticamente, mas só é confirmado quando a duração manual for informada.
+
+O planejamento usa intervalos inclusivos de dias de calendário nesta etapa: `start_date` e `end_date` representam dias comprometidos e uma sobreposição ocorre quando `startA <= endB && startB <= endA`. Esta decisão técnica explicita o intervalo usado pelas APIs sem criar calendário de feriados ou produtividade.
+
+As mudanças propostas permanecem em rascunho até aprovação. Compromissos fixados não podem ser modificados automaticamente. `X-Organization-Id` continua sendo apenas contexto de desenvolvimento, não autenticação.

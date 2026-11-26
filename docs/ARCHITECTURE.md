@@ -96,3 +96,17 @@ The dashed calls are future business integrations. They are not implemented in t
 - Production deployment and PostgreSQL topology.
 - Whether a separate read/reporting service is needed.
 - Whether Micro Frontends provide enough benefit to justify their complexity.
+
+## 8. Núcleo operacional implementado
+
+O Team Service mantém `employees`, `team_memberships` e `employee_unavailability` em seu próprio banco. O Project Service mantém os dados auxiliares existentes e recebeu os campos aditivos `priority`, `continuous_execution` e `desired_people`; a lista legada de localidades não é apagada nesta transição. O Planning Service mantém `allocations`, `transports` e `planning_proposals` em `planning_db`.
+
+Os contratos usam REST síncrono e `X-Organization-Id` em todas as operações de negócio. A primeira versão do Planning Service usa JDBC, Flyway e transações locais; referências de projetos, equipes e funcionários são UUIDs sem chaves estrangeiras entre bancos. Falhas de comunicação externa devem ser tratadas como indisponibilidade técnica antes de confirmar propostas; a validação remota completa e timeouts configuráveis são próximos passos.
+
+### Estratégia heurística
+
+A proposta inicial é um esqueleto determinístico de prioridade-prazo: projetos são ordenados por prioridade descendente, prazo ascendente e identificador como desempate; recursos e períodos viáveis são avaliados sem modificar compromissos fixados. Conflitos bloqueantes são restrições obrigatórias. A complexidade esperada da versão completa é O(P × R × D + A), onde P é o número de projetos, R de recursos, D de dias candidatos e A de compromissos existentes. A abordagem não garante ótimo matemático; deve ser avaliada por atendimento de prazo, prioridade, antecipação, ociosidade, deslocamentos e projetos não atendidos.
+
+### Pendências técnicas
+
+Ainda faltam clientes REST efetivamente usados pelo Planning Service para Team/Project com timeout, controle otimista de versão de propostas, endpoints completos de edição de alocações e transportes, e testes de integração do fluxo vertical. Essas lacunas estão registradas como trabalho restante.

@@ -5,6 +5,7 @@ import com.teamflow.project.domain.ProjectServiceItem;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -20,6 +21,18 @@ public record ProjectRequest(
         List<@NotBlank @Size(max = 100) String> competencies,
         List<@NotBlank @Size(max = 100) String> qualifications,
         @Valid List<ProjectLocation> localities,
-        @Valid List<ProjectServiceItem> services
+        @Valid List<ProjectServiceItem> services,
+        @Pattern(regexp = "(?i)LOW|NORMAL|HIGH|CRITICAL") String priority,
+        Boolean continuousExecution,
+        @Min(0) Integer desiredPeople
 ) {
+    public ProjectRequest(String identification, String client, String description,
+                          LocalDate plannedStartDate, LocalDate plannedEndDate,
+                          Integer estimatedDurationDays, List<String> competencies,
+                          List<String> qualifications, @Valid List<ProjectLocation> localities,
+                          @Valid List<ProjectServiceItem> services) {
+        this(identification, client, description, plannedStartDate, plannedEndDate,
+                estimatedDurationDays, competencies, qualifications, localities, services,
+                "NORMAL", true, null);
+    }
 }

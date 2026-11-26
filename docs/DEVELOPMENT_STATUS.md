@@ -1,8 +1,8 @@
 # TeamFlow — Development Status
 
-**Data de referência:** 2026-11-24  
+**Data de referência:** 2026-11-25
 **Escopo:** MVP incremental  
-**Status:** Team Service e Project Service com CRUD inicial validado
+**Status:** Núcleo operacional inicial implementado; integração completa e algoritmo ainda parciais
 
 ## 1. Objetivo e visão
 
@@ -55,7 +55,7 @@ Autenticação real, autorização e gestão completa de organizações ainda n�
 
 ## 6. Estado do Team Service
 
-Implementado e testado:
+Implementado:
 
 - Cadastro de equipes.
 - Listagem paginada.
@@ -67,8 +67,13 @@ Implementado e testado:
 - Validação e tratamento padronizado de erros.
 - Persistência PostgreSQL com migração Flyway.
 - CORS local para integração com o frontend.
+- Funcionários individuais com função principal, situação e localização inicial opcional.
+- Listagem paginada, consulta, edição e inativação lógica de funcionários.
+- Memberships de funcionários em múltiplas equipes com função específica por vínculo.
+- Consulta dos vínculos por funcionário e por equipe.
+- Cadastro e consulta de indisponibilidades individuais.
 
-Não foram implementados funcionários individuais, vínculos entre pessoas e equipes, alocações, transporte, conflitos ou cálculos de produtividade. A ausência dessas implementações não representa exclusão de escopo: o domínio individual foi confirmado para futura especificação.
+Ainda não participam da disponibilidade derivada: indisponibilidades, composição coletiva, alocações e deslocamentos do Planning Service.
 
 ## 7. Estado do Project Service
 
@@ -89,14 +94,25 @@ Implementado e testado nesta sessão:
 - Validação e tratamento padronizado de erros.
 - Persistência PostgreSQL com migração Flyway.
 - CORS local para integração com o frontend.
+- Prioridade `LOW`, `NORMAL`, `HIGH` ou `CRITICAL`.
+- Continuidade de execução.
+- Quantidade desejada opcional.
 
-As listas de localidades e serviços não definem regras de múltiplas etapas, alocações ou compatibilidade. Serviços continuam sendo informações auxiliares de projetos; as decisões sobre equipes e funcionários permanecem pendentes na documentação de negócio.
+O campo legado de localidades foi preservado para transição segura. Projetos novos devem usar uma única localidade; registros antigos com múltiplas localidades não são reduzidos arbitrariamente. Serviços continuam sendo informações auxiliares.
 
 ## 8. Estado do Planning Service
 
-O serviço está presente no ambiente Docker Compose e possui health check funcional em `/health`.
+Implementado o primeiro núcleo persistente:
 
-Cadastro de alocações, eventos de transporte, motor de conflitos, disponibilidade derivada e sugestões de alocação ainda não foram implementados.
+- alocações de equipes e funcionários, inclusive períodos inclusivos e filtros;
+- fixação/liberação e cancelamento lógico de alocações;
+- transportes individuais/coletivos com duração manual opcional, chegada e situação `PENDING`/`CONFIRMED`;
+- conflitos iniciais de sobreposição e transporte pendente;
+- propostas versionadas em estado `DRAFT` e aprovação integral;
+- tratamento padronizado de validação e falhas de requisição;
+- Flyway e banco próprio do serviço.
+
+O serviço ainda não consulta Team/Project por REST, não executa a heurística completa, não deriva disponibilidade integral e não implementa aprovação seletiva/replanejamento detalhado.
 
 ## 9. Estado do frontend
 
@@ -109,6 +125,8 @@ O frontend React existente foi evoluído, sem criar uma aplicação separada:
 - Estados de carregamento, lista vazia e erros.
 - Consumo das APIs REST usando o contexto temporário de organização.
 - Interface com navegação lateral e área central de trabalho, preparada para receber futuramente uma visão operacional centralizada.
+- Módulo simples de Funcionários com cadastro/edição/listagem.
+- Módulo simples de Planejamento com consulta de alocações/transportes e geração de proposta.
 
 Dashboard, calendário de planejamento, alocações, transportes e conflitos ainda não estão disponíveis.
 
@@ -117,67 +135,77 @@ Dashboard, calendário de planejamento, alocações, transportes e conflitos ain
 Comandos e verificações realizados:
 
 - `npm run build` no frontend: aprovado.
-- `mvn test` do Team Service com PostgreSQL via Testcontainers: 5 testes, 0 falhas, 0 erros.
-- `mvn test` do Project Service com PostgreSQL via Testcontainers: 5 testes, 0 falhas, 0 erros.
+- Testes unitários do Team Service em container Maven: 2 testes, 0 falhas, 0 erros.
+- Testes unitários do Project Service em container Maven: 2 testes, 0 falhas, 0 erros.
+- Testes do Planning Service em container Maven: 3 testes, 0 falhas, 0 erros.
+- Integrações Testcontainers Team/Project: tentadas, mas não concluídas porque o container Maven não alcançou a porta publicada do PostgreSQL de teste; não classificadas como aprovadas.
 - Build Docker do Team Service: aprovado.
 - Build Docker do Project Service: aprovado.
+- Build Docker do Planning Service: aprovado.
 - Build Docker do frontend: aprovado.
 - `docker compose config --quiet`: aprovado.
 - `docker compose up -d`: executado com containers saudáveis.
 - Health checks dos serviços: aprovados para Identity, Team, Project e Planning.
 - CRUD real do Team Service: criação, listagem, consulta, edição e isolamento organizacional verificados.
 - CRUD real do Project Service: criação, listagem, consulta, edição e isolamento organizacional verificados.
-- Migrações e tabelas de equipes e projetos verificadas no PostgreSQL.
+- Migrações V2 de Team/Project e V1/V2 de Planning aplicadas no PostgreSQL.
+- Smoke REST: funcionário, projeto, alocação fixa, conflito bloqueante, transporte pendente, proposta DRAFT e aprovação integral.
 
 ## 11. Limitações conhecidas
 
-- Não há autenticação real nem autorização de produção.
-- `X-Organization-Id` é somente um contexto temporário de desenvolvimento.
-- Os valores oficiais de situação da equipe ainda não foram definidos.
-- A precedência entre datas previstas, duração estimada do projeto e informações auxiliares de serviços permanece pendente.
-- As regras de múltiplas equipes, etapas e localidades permanecem pendentes.
-- A identificação e o cadastro de funcionários permanecem pendentes.
-- A participação de funcionários em múltiplas equipes permanece pendente de detalhamento.
-- A disponibilidade e a alocação individual permanecem pendentes de detalhamento.
-- O deslocamento individual e sua independência do deslocamento da equipe permanecem pendentes de detalhamento.
-- Os conflitos entre pessoas, equipes, projetos, datas e localidades permanecem pendentes.
-- As regras de intervalo, conflitos bloqueantes, alertas e disponibilidade no dia de chegada permanecem pendentes.
+- Não há autenticação real nem autorização de produção; `X-Organization-Id` é apenas contexto de desenvolvimento.
+- O Planning Service ainda não consulta Team Service e Project Service por REST e, portanto, não valida referências remotas nem compõe disponibilidade completa.
+- A geração de propostas ainda é um esqueleto persistente: não materializa alocações heurísticas nem alternativas por projeto.
+- Transporte possui criação e consulta, mas ainda não possui edição, cancelamento e revalidação completa após mudanças de alocação.
+- Indisponibilidade individual possui persistência e endpoints de cadastro/consulta, mas ainda não participa do mecanismo de conflitos.
+- Propostas ainda não têm snapshot detalhado, edição, aprovação seletiva, comparação de versões ou proteção contra obsolescência.
 - Não há auditoria operacional completa com usuário autenticado.
-- Não há dashboard operacional nem integração entre Planning, Team e Project para validações.
-- Dados de teste foram criados em organizações temporárias durante as verificações locais.
+- Dashboard operacional, calendário, Gantt, gráficos e drag-and-drop permanecem fora desta etapa.
+- Dados sintéticos usados em testes locais devem permanecer identificados como dados de teste.
 
 ## 12. Próximo incremento
 
-O incremento originalmente previsto — implementação do Project Service integrada ao frontend React existente — foi concluído nesta sessão e está registrado na seção 7.
-
-O próximo incremento efetivo deverá ser definido após a revisão deste estado. A direção natural é iniciar o Planning Service com um primeiro fluxo vertical aprovado, sem inferir as regras de conflitos, transporte ou confirmação que continuam pendentes.
+Adicionar clientes REST isolados para Team/Project com timeout e propagação do contexto organizacional; completar disponibilidade, revalidação, transportes e algoritmo heurístico determinístico; depois criar aprovação seletiva com controle de versão e testes de integração PostgreSQL.
 
 ## 13. Instruções para continuar
 
 1. Ler `AGENTS.md`, `docs/PROJECT_BRIEF.md`, `docs/REQUIREMENTS.md`, `docs/BUSINESS_RULES.md` e `docs/ARCHITECTURE.md`.
-2. Executar `docker compose config` para validar a configuração local.
-3. Executar `docker compose up -d` para iniciar PostgreSQL, serviços e frontend.
-4. Usar `http://localhost:5173` para acessar a interface.
-5. Usar `X-Organization-Id` apenas como contexto temporário de desenvolvimento.
-6. Executar os testes do serviço alterado antes de qualquer nova integração.
-7. Não implementar regras pendentes implicitamente.
-8. Não iniciar funcionalidades de Planning sem autorização e sem revisar as pendências de negócio correspondentes.
+2. Executar `docker compose config --quiet` e `docker compose up -d`.
+3. Usar `http://localhost:5173` para acessar a interface.
+4. Enviar `X-Organization-Id` como contexto temporário de desenvolvimento.
+5. Executar os testes e builds do serviço alterado antes da próxima integração.
+6. Não alterar automaticamente compromissos confirmados nem aplicar propostas sem aprovação.
 
-## 14. Decisões que ainda dependem de aprovação
+## 14. Decisões e limites ainda abertos
 
-- Perfis e permissões do MVP.
-- Valores válidos para situação da equipe.
-- Modelo detalhado de disponibilidade e suas exceções.
-- Precedência entre datas, duração estimada do projeto e informações auxiliares de serviços.
-- Regras para múltiplas equipes, etapas e localidades.
-- Inclusão das datas inicial e final nos intervalos de planejamento.
-- Disponibilidade da equipe no dia de chegada do transporte.
-- Conflitos que bloqueiam uma operação e conflitos que permitem confirmação.
-- Critérios, prioridade e ordenação das sugestões de alocação.
-- Fluxos de autenticação, autorização e comunicação entre serviços.
-- Política final de auditoria, observabilidade e implantação de produção.
-- Identificação, cadastro, disponibilidade e vínculos de funcionários.
-- Relação entre alocação individual e alocação da equipe.
-- Possibilidade de alocação individual sem alocação prévia da equipe.
-- Modelo de deslocamento individual.
-- Classificação de conflitos como bloqueios ou alertas.
+- Autenticação, autorização, auditoria e observabilidade de produção.
+- Política final de edição/cancelamento de transportes e disponibilidade no dia de chegada.
+- Critérios detalhados para conflitos derivados de composição, múltiplas equipes e alocação individual/coletiva.
+- Formato completo de alternativas, revisão de duração e aprovação seletiva de propostas.
+- Escala máxima esperada do algoritmo heurístico e métricas operacionais de avaliação.
+
+## 15. Retomada da implementação — 2026-11-25
+
+### Concluído nesta sessão
+
+- migração aditiva do Team Service para funcionários, memberships e indisponibilidades;
+- endpoints de cadastro, consulta paginada, edição, inativação e vínculos de funcionários;
+- migração aditiva do Project Service para prioridade, continuidade e quantidade desejada;
+- primeiro fluxo persistente do Planning Service para alocações, fixação, cancelamento, transportes pendentes/confirmados, consulta de conflitos e propostas DRAFT/APPROVED;
+- proteção de unicidade para versões de propostas e normalização de tipo de recurso na validação de conflitos;
+- telas React simples para Funcionários e Planejamento, preservando a navegação e a identidade visual existente;
+- Flyway habilitado no Planning Service.
+
+### Parcial ou não concluído
+
+- indisponibilidade individual possui migração, service e endpoints de cadastro/consulta, mas ainda não participa da disponibilidade derivada;
+- transporte ainda não possui edição, cancelamento e revalidação completa após alterações;
+- Planning ainda não consulta efetivamente Team/Project por REST, não possui clientes com timeout e não implementa a heurística completa de geração de alocações;
+- propostas ainda persistem metadados de estratégia e não possuem snapshot detalhado, edição, aprovação seletiva ou proteção por versão;
+- há testes unitários iniciais do Planning Service; ainda falta cobertura proporcional de integração para os fluxos adicionados;
+- frontend permite consultar e gerar propostas, mas ainda não oferece formulários completos de alocação e transporte;
+- dashboard, calendário, Gantt, gráficos e drag-and-drop continuam fora desta etapa.
+
+### Próxima retomada
+
+Adicionar clientes REST isolados para Team/Project com timeout e propagação de organização; completar disponibilidade, revalidação e algoritmo heurístico; depois criar testes de integração com PostgreSQL para isolamento, conflitos, transporte pendente, fixação e aprovação.

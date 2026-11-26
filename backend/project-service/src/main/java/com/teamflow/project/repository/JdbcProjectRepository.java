@@ -32,14 +32,14 @@ public class JdbcProjectRepository implements ProjectRepository {
         jdbcTemplate.update("""
                 INSERT INTO projects (id, organization_id, identification, client, description,
                     planned_start_date, planned_end_date, estimated_duration_days, competencies,
-                    qualifications, localities, services, created_at, updated_at)
+                    qualifications, localities, services, priority, continuous_execution, desired_people, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS jsonb), CAST(? AS jsonb),
-                    CAST(? AS jsonb), CAST(? AS jsonb), ?, ?)
+                    CAST(? AS jsonb), CAST(? AS jsonb), ?, ?, ?, ?, ?)
                 """,
                 project.id(), project.organizationId(), project.identification(), project.client(),
                 project.description(), project.plannedStartDate(), project.plannedEndDate(),
                 project.estimatedDurationDays(), json(project.competencies()), json(project.qualifications()),
-                json(project.localities()), json(project.services()), project.createdAt(), project.updatedAt());
+                json(project.localities()), json(project.services()), project.priority(), project.continuousExecution(), project.desiredPeople(), project.createdAt(), project.updatedAt());
         return project;
     }
 
@@ -48,7 +48,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         return jdbcTemplate.query("""
                 SELECT id, organization_id, identification, client, description, planned_start_date,
                     planned_end_date, estimated_duration_days, competencies, qualifications,
-                    localities, services, created_at, updated_at
+                    localities, services, priority, continuous_execution, desired_people, created_at, updated_at
                 FROM projects WHERE organization_id = ?
                 ORDER BY identification, id LIMIT ? OFFSET ?
                 """, rowMapper, organizationId, size, page * size);
@@ -66,7 +66,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         return jdbcTemplate.query("""
                 SELECT id, organization_id, identification, client, description, planned_start_date,
                     planned_end_date, estimated_duration_days, competencies, qualifications,
-                    localities, services, created_at, updated_at
+                    localities, services, priority, continuous_execution, desired_people, created_at, updated_at
                 FROM projects WHERE organization_id = ? AND id = ?
                 """, rowMapper, organizationId, id).stream().findFirst();
     }
@@ -77,12 +77,12 @@ public class JdbcProjectRepository implements ProjectRepository {
                 UPDATE projects SET identification = ?, client = ?, description = ?,
                     planned_start_date = ?, planned_end_date = ?, estimated_duration_days = ?,
                     competencies = CAST(? AS jsonb), qualifications = CAST(? AS jsonb),
-                    localities = CAST(? AS jsonb), services = CAST(? AS jsonb), updated_at = ?
+                    localities = CAST(? AS jsonb), services = CAST(? AS jsonb), priority = ?, continuous_execution = ?, desired_people = ?, updated_at = ?
                 WHERE organization_id = ? AND id = ?
                 """,
                 project.identification(), project.client(), project.description(), project.plannedStartDate(),
                 project.plannedEndDate(), project.estimatedDurationDays(), json(project.competencies()),
-                json(project.qualifications()), json(project.localities()), json(project.services()),
+                json(project.qualifications()), json(project.localities()), json(project.services()), project.priority(), project.continuousExecution(), project.desiredPeople(),
                 project.updatedAt(), project.organizationId(), project.id());
         return updated == 0 ? Optional.empty() : Optional.of(project);
     }
@@ -105,6 +105,8 @@ public class JdbcProjectRepository implements ProjectRepository {
                         .constructCollectionType(List.class, ProjectLocation.class)),
                 readList(resultSet.getString("services"), objectMapper.getTypeFactory()
                         .constructCollectionType(List.class, ProjectServiceItem.class)),
+                resultSet.getString("priority"), resultSet.getBoolean("continuous_execution"),
+                (Integer) resultSet.getObject("desired_people"),
                 resultSet.getObject("created_at", OffsetDateTime.class),
                 resultSet.getObject("updated_at", OffsetDateTime.class));
     }

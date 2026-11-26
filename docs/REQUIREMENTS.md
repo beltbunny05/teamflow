@@ -371,3 +371,16 @@ Nenhum requisito deste documento autoriza o início da programação. A implemen
 4. Definir modelos de domínio, contratos e fronteiras dos microsserviços.
 5. Validar os critérios de aceitação finais.
 6. Somente depois, autorizar a preparação da implementação.
+
+## 12. Requisitos consolidados do núcleo operacional
+
+Os requisitos abaixo foram aprovados para a implementação incremental e prevalecem sobre critérios marcados como pendentes incompatíveis:
+
+- funcionários individuais possuem identificação, função principal, situação e localização inicial opcional;
+- memberships permitem múltiplas equipes e função específica por vínculo, sem criar funcionários fictícios para composição agregada;
+- projetos mantêm uma localidade única na evolução operacional, duração manual, prazo, prioridade (`LOW`, `NORMAL`, `HIGH`, `CRITICAL`), continuidade e capacidade desejada opcional;
+- Planning Service é proprietário de alocações, transportes, conflitos e propostas; não acessa bancos dos demais serviços;
+- conflitos bloqueantes não podem ser ignorados; alertas e pendências devem ser explicáveis;
+- propostas são rascunhos e só alteram o planejamento após aprovação explícita e revalidação.
+
+O intervalo de datas do MVP é inclusivo e em dias de calendário. A inclusão do dia de chegada de um transporte e regras avançadas de disponibilidade derivada continuam pendências quando não forem necessárias para o fluxo vertical atual.

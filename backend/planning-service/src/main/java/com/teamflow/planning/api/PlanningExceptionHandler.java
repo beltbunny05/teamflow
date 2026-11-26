@@ -1,0 +1,7 @@
+package com.teamflow.planning.api;
+import org.springframework.http.*; import org.springframework.web.bind.annotation.*; import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException; import org.springframework.web.bind.MethodArgumentNotValidException; import org.springframework.http.converter.HttpMessageNotReadableException; import java.time.*; import java.util.*;
+@RestControllerAdvice public class PlanningExceptionHandler {
+ @ExceptionHandler(MethodArgumentNotValidException.class) ResponseEntity<Map<String,Object>> validation(MethodArgumentNotValidException e){Map<String,String> f=new LinkedHashMap<>();e.getBindingResult().getFieldErrors().forEach(x->f.put(x.getField(),x.getDefaultMessage()));return error(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Request contains invalid fields",f);}
+ @ExceptionHandler({IllegalArgumentException.class,MethodArgumentTypeMismatchException.class,HttpMessageNotReadableException.class}) ResponseEntity<Map<String,Object>> bad(Exception e){return error(HttpStatus.BAD_REQUEST,"BAD_REQUEST",e.getMessage()==null?"Request is invalid":e.getMessage(),Map.of());}
+ private ResponseEntity<Map<String,Object>> error(HttpStatus status,String code,String message,Map<String,String> fields){return ResponseEntity.status(status).body(Map.of("timestamp",OffsetDateTime.now(ZoneOffset.UTC),"status",status.value(),"code",code,"message",message,"fields",fields));}
+}

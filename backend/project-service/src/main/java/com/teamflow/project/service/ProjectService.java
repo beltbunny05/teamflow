@@ -52,14 +52,14 @@ public class ProjectService {
         return new Project(id, organizationId, request.identification().trim(), normalized(request.client()),
                 normalized(request.description()), request.plannedStartDate(), request.plannedEndDate(),
                 request.estimatedDurationDays(), request.competencies(), request.qualifications(),
-                request.localities(), request.services(), createdAt, updatedAt);
+                request.localities(), request.services(), request.priority() == null ? "NORMAL" : request.priority().toUpperCase(), request.continuousExecution() == null || request.continuousExecution(), request.desiredPeople(), createdAt, updatedAt);
     }
 
     private ProjectResponse toResponse(Project project) {
         return new ProjectResponse(project.id(), project.organizationId(), project.identification(),
                 project.client(), project.description(), project.plannedStartDate(), project.plannedEndDate(),
                 project.estimatedDurationDays(), project.competencies(), project.qualifications(),
-                project.localities(), project.services(), project.createdAt(), project.updatedAt());
+                project.localities(), project.services(), project.priority(), project.continuousExecution(), project.desiredPeople(), project.createdAt(), project.updatedAt());
     }
 
     private String normalized(String value) {

@@ -471,3 +471,21 @@ Não foi identificada regra operacional confirmada sem qualquer referência no `
 - exceções de disponibilidade.
 
 Esses pontos estão registrados como pendências neste documento e não devem ser convertidos em comportamento implícito.
+
+## 15. Decisões consolidadas RN-DEC-01 a RN-DEC-20
+
+Esta seção registra as decisões aprovadas nesta etapa e substitui, nos pontos conflitantes, as pendências e regras anteriores das seções 1 a 14. Pendências não conflitantes permanecem válidas.
+
+Para o núcleo operacional ficam aprovadas: organizações isolam todos os dados; funcionários podem pertencer a várias equipes e ter papel por vínculo; alocação coletiva compromete os integrantes, com exceções temporárias sem alteração da composição original; conflitos físicos são bloqueantes e problemas operacionais são alertas explicáveis; transporte pode ficar pendente sem duração e não deve ser tratado como duração zero; projetos têm início previsto, duração manual, prazo, prioridade, continuidade e capacidade desejada opcional; todos os dias do calendário têm o mesmo peso; localização é única por projeto; compromissos fixados são preservados; propostas e replanejamentos exigem confirmação do gestor.
+
+### 10.1 Intervalos e transição de composição
+
+O MVP usa períodos inclusivos. Uma alteração posterior de membership não reescreve alocações já persistidas, pois allocations armazenam o recurso e o período no Planning Service. A composição atual da equipe é consultada para novas validações, enquanto o histórico de compromissos permanece no Planning Service.
+
+### 10.2 Classificação operacional implementada
+
+Sobreposição de alocações é `BLOCKING`. Transporte sem duração é `PLANNING_PENDING` e impede considerar o planejamento plenamente validado, mas não é convertido automaticamente em bloqueio físico sem a confirmação dos dados faltantes. A classificação detalhada de chegada, indisponibilidade de equipe e conflitos derivados de múltiplas equipes continua pendente.
+
+### 10.3 Limites
+
+Não há cálculo de produtividade, estimativa de distância, GPS, autenticação definitiva, otimização matemática ou aplicação automática de propostas. A heurística inicial é assistiva e determinística.
