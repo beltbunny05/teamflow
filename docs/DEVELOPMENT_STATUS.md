@@ -178,6 +178,44 @@ Adicionar clientes REST isolados para Team/Project com timeout e propagação do
 
 ## 16. Atualização de finalização do núcleo — 2026-11-26
 
+## 17. Endurecimento incremental — 2026-11-26
+
+Implementado nesta retomada:
+
+- migração aditiva `V4__allocation_member_snapshots.sql`, com snapshot de integrantes em novas alocações coletivas e individuais;
+- conflitos entre equipes usam o snapshot efetivo quando disponível e aplicam exceções temporárias; alocações anteriores à V4 não recebem integrantes inventados;
+- `V4__organization_base_location.sql` no Team Service, com `GET/PUT /organization-settings/base-location` e pendência explícita quando ausente;
+- propostas registram a composição consultada e a aprovação recusa proposta obsoleta quando memberships mudam;
+- ordenação da heurística alinhada ao objetivo aprovado de prazo antes de prioridade;
+- contrato inicial para a próxima etapa visual em `docs/DASHBOARD_CONTRACTS.md`.
+
+Estado honesto: snapshot e cidade base estão implementados e compilados, mas ainda faltam o cenário automatizado de 40 funcionários, execução fracionada completa, avaliação de alternativas individuais, medição de chamadas REST e a matriz final das 20 decisões. O núcleo operacional não deve ser declarado concluído antes desses testes e da confirmação de aprovação seletiva em integração.
+
+## 18. Matriz de conformidade RN-DEC-01 a RN-DEC-20
+
+| Decisão | Estado atual |
+|---|---|
+| RN-DEC-01 isolamento organizacional | implementada e coberta nos CRUDs/REST; integração ampliada pendente |
+| RN-DEC-02 funcionários em múltiplas equipes | implementada; cenários ampliados pendentes |
+| RN-DEC-03 alocação coletiva compromete integrantes | implementada; snapshot persistente implementado nesta retomada |
+| RN-DEC-04 exceções temporárias | implementada parcialmente; realocação automática ainda é proposta assistiva |
+| RN-DEC-05 conflitos físicos bloqueiam | implementada |
+| RN-DEC-06 alertas operacionais explicáveis | implementada |
+| RN-DEC-07 transporte pendente não é zero | implementada |
+| RN-DEC-08 duração manual do projeto | implementada |
+| RN-DEC-09 prazo e prioridade | implementada; heurística revisada |
+| RN-DEC-10 continuidade/fracionamento | parcial; contínuo implementado, fracionado ainda pendente |
+| RN-DEC-11 dias corridos inclusivos | implementada |
+| RN-DEC-12 localidades | implementada |
+| RN-DEC-13 cidade base organizacional | implementada no Team Service; configuração frontend pendente |
+| RN-DEC-14 localização inicial excepcional | implementada |
+| RN-DEC-15 compromissos fixados | implementada |
+| RN-DEC-16 objetivos da heurística | parcial; ordem corrigida, avaliação de alternativas ainda limitada |
+| RN-DEC-17 aprovação explícita | implementada |
+| RN-DEC-18 aprovação seletiva/dependências | implementada parcialmente; integração ampliada pendente |
+| RN-DEC-19 localização planejada posterior | parcial; base e localização inicial disponíveis, cadeia completa de deslocamentos pendente |
+| RN-DEC-20 sem aplicação automática | implementada |
+
 Esta seção supersede as descrições de parcialidade dos itens 8 a 13 acima. O histórico foi preservado para rastreabilidade.
 
 ### Implementado

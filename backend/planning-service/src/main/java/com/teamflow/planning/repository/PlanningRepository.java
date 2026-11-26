@@ -19,6 +19,10 @@ public class PlanningRepository {
     public PlanningRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public AllocationResponse saveAllocation(UUID org, AllocationRequest r) {
+        return saveAllocation(org, r, List.of());
+    }
+
+    public AllocationResponse saveAllocation(UUID org, AllocationRequest r, Collection<UUID> memberIds) {
         UUID id = UUID.randomUUID(); OffsetDateTime now = now();
         jdbc.update("""
                 INSERT INTO allocations (id, organization_id, project_id, resource_type, resource_id,
@@ -26,7 +30,26 @@ public class PlanningRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?, ?, 0)
                 """, id, org, r.projectId(), r.resourceType(), r.resourceId(), r.startDate(), r.endDate(),
                 Boolean.TRUE.equals(r.fixed()), now, now);
+        if ("TEAM".equals(r.resourceType())) {
+            for (UUID employeeId : new LinkedHashSet<>(memberIds)) {
+                jdbc.update("INSERT INTO allocation_member_snapshots (allocation_id, organization_id, employee_id, source, recorded_at) VALUES (?, ?, ?, 'TEAM_COMPOSITION', ?)",
+                        id, org, employeeId, now);
+            }
+        } else {
+            jdbc.update("INSERT INTO allocation_member_snapshots (allocation_id, organization_id, employee_id, source, recorded_at) VALUES (?, ?, ?, 'INDIVIDUAL', ?)",
+                    id, org, r.resourceId(), now);
+        }
         bumpRevision(org); return allocation(org, id).orElseThrow();
+    }
+
+    public Set<UUID> allocationMemberIds(UUID org, UUID allocationId) {
+        return new LinkedHashSet<>(jdbc.query("SELECT employee_id FROM allocation_member_snapshots WHERE organization_id=? AND allocation_id=? ORDER BY employee_id",
+                (rs, row) -> rs.getObject("employee_id", UUID.class), org, allocationId));
+    }
+
+    public boolean hasMemberSnapshot(UUID org, UUID allocationId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM allocation_member_snapshots WHERE organization_id=? AND allocation_id=?", Integer.class, org, allocationId);
+        return count != null && count > 0;
     }
 
     public List<AllocationResponse> allocations(UUID org, UUID project, String type, UUID resource, LocalDate from, LocalDate to) {
@@ -135,7 +158,14 @@ public class PlanningRepository {
     private void ensureState(UUID org) { jdbc.update("INSERT INTO planning_state (organization_id, allocation_revision, updated_at) VALUES (?, 0, ?) ON CONFLICT (organization_id) DO NOTHING", org, now()); }
     private Optional<AllocationExceptionResponse> exception(UUID org, UUID id) { return jdbc.query("SELECT * FROM allocation_exceptions WHERE organization_id=? AND id=?", this::exceptionRow, org, id).stream().findFirst(); }
 
-    private AllocationResponse allocationRow(ResultSet rs, int ignored) throws java.sql.SQLException { return new AllocationResponse(rs.getObject("id", UUID.class), rs.getObject("organization_id", UUID.class), rs.getObject("project_id", UUID.class), rs.getString("resource_type"), rs.getObject("resource_id", UUID.class), rs.getObject("start_date", LocalDate.class), rs.getObject("end_date", LocalDate.class), rs.getBoolean("fixed"), rs.getString("status"), rs.getObject("created_at", OffsetDateTime.class), rs.getObject("updated_at", OffsetDateTime.class), rs.getLong("revision")); }
+    private AllocationResponse allocationRow(ResultSet rs, int ignored) throws java.sql.SQLException {
+        UUID org = rs.getObject("organization_id", UUID.class); UUID id = rs.getObject("id", UUID.class);
+        List<UUID> members = jdbc.query("SELECT employee_id FROM allocation_member_snapshots WHERE organization_id=? AND allocation_id=? ORDER BY employee_id",
+                (memberRs, row) -> memberRs.getObject("employee_id", UUID.class), org, id);
+        return new AllocationResponse(id, org, rs.getObject("project_id", UUID.class), rs.getString("resource_type"), rs.getObject("resource_id", UUID.class),
+                rs.getObject("start_date", LocalDate.class), rs.getObject("end_date", LocalDate.class), rs.getBoolean("fixed"), rs.getString("status"),
+                rs.getObject("created_at", OffsetDateTime.class), rs.getObject("updated_at", OffsetDateTime.class), rs.getLong("revision"), members);
+    }
     private TransportResponse transportRow(ResultSet rs, int ignored) throws java.sql.SQLException { return new TransportResponse(rs.getObject("id", UUID.class), rs.getObject("organization_id", UUID.class), rs.getString("resource_type"), rs.getObject("resource_id", UUID.class), rs.getString("origin"), rs.getString("destination"), rs.getObject("start_date", LocalDate.class), (Integer) rs.getObject("duration_days"), rs.getObject("arrival_date", LocalDate.class), rs.getString("status"), rs.getObject("created_at", OffsetDateTime.class), rs.getObject("updated_at", OffsetDateTime.class), rs.getLong("revision")); }
     private AllocationExceptionResponse exceptionRow(ResultSet rs, int ignored) throws java.sql.SQLException { return new AllocationExceptionResponse(rs.getObject("id", UUID.class), rs.getObject("organization_id", UUID.class), rs.getObject("allocation_id", UUID.class), rs.getObject("employee_id", UUID.class), rs.getString("kind"), rs.getObject("start_date", LocalDate.class), rs.getObject("end_date", LocalDate.class), rs.getObject("target_project_id", UUID.class), rs.getObject("target_start_date", LocalDate.class), rs.getObject("target_end_date", LocalDate.class), rs.getString("reason"), rs.getObject("created_at", OffsetDateTime.class)); }
     private ProposalResponse proposalRow(ResultSet rs, int ignored) throws java.sql.SQLException { try { JsonNode payload = new com.fasterxml.jackson.databind.ObjectMapper().readTree(rs.getString("payload")); return new ProposalResponse(rs.getObject("id", UUID.class), rs.getObject("organization_id", UUID.class), rs.getLong("version"), rs.getString("status"), payload.path("explanation").asText("Proposta de planejamento"), rs.getObject("created_at", OffsetDateTime.class), rs.getObject("updated_at", OffsetDateTime.class), rs.getLong("base_revision"), payload); } catch (java.io.IOException e) { throw new IllegalStateException("Invalid proposal payload", e); } }

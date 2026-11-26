@@ -73,6 +73,18 @@ public class TeamClient {
         }
     }
 
+    public RemoteOrganizationLocation organizationLocation(UUID organizationId) {
+        try {
+            RemoteOrganizationLocation location = client.get().uri("/organization-settings/base-location")
+                    .header("X-Organization-Id", organizationId.toString()).retrieve().body(RemoteOrganizationLocation.class);
+            if (location == null || !organizationId.equals(location.organizationId())) throw new RemoteReferenceNotFoundException("Organization location is not available");
+            return location;
+        } catch (RestClientResponseException exception) {
+            if (exception.getStatusCode().value() == 404) throw new RemoteReferenceNotFoundException("Organization location not found");
+            throw dependency("Team Service returned " + exception.getStatusCode(), exception);
+        } catch (RestClientException exception) { throw dependency("Team Service is unavailable", exception); }
+    }
+
     public List<RemoteEmployee> listEmployees(UUID organizationId) {
         try {
             EmployeePage page = client.get().uri(uriBuilder -> uriBuilder.path("/employees").queryParam("page", 0).queryParam("size", 100).build())

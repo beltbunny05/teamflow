@@ -43,7 +43,7 @@ public class PlanningService {
         validateDates(normalized.startDate(), normalized.endDate());
         validateReferences(org, normalized);
         ensureNoBlocking(conflicts(org, normalized));
-        return repo.saveAllocation(org, normalized);
+        return repo.saveAllocation(org, normalized, snapshotMembers(org, normalized));
     }
 
     public List<AllocationResponse> list(UUID org, UUID project, String type, UUID resource, LocalDate from, LocalDate to) {
@@ -130,6 +130,11 @@ public class PlanningService {
         long baseRevision = repo.currentRevision(org);
         List<RemoteProject> projectList = projects.list(org).stream().sorted(projectComparator()).toList();
         List<RemoteTeam> teamList = teams.listTeams(org).stream().filter(RemoteTeam::active).sorted(Comparator.comparing(RemoteTeam::identification).thenComparing(RemoteTeam::id)).toList();
+        ObjectNode compositionSnapshot = mapper.createObjectNode();
+        for (RemoteTeam team : teamList) {
+            ArrayNode members = compositionSnapshot.putArray(team.id().toString());
+            requireTeams().employeesForTeam(org, team.id()).stream().map(RemoteMembership::employeeId).sorted().forEach(id -> members.add(id.toString()));
+        }
         ArrayNode items = mapper.createArrayNode(); ArrayNode unattended = mapper.createArrayNode();
         List<AllocationResponse> existing = repo.allocations(org, null, null, null, null, null).stream().filter(a -> !"CANCELLED".equals(a.status())).toList();
         existing.stream().filter(AllocationResponse::fixed).forEach(a -> items.add(itemNode(new ProposalItem(a.id(), "RETAIN", a.projectId(), a.projectId().toString(), a.resourceType(), a.resourceId(), a.resourceId().toString(), a.startDate(), a.endDate(), true, "FIXED", "Compromisso fixado preservado.", List.of()))));
@@ -154,13 +159,15 @@ public class PlanningService {
                 String status = capacityAlert ? "ALERT_CAPACITY" : found.isEmpty() ? "VIABLE" : "ALERT";
                 String itemExplanation = capacityAlert ? "Quantidade desejada não atendida; revisar duração ou complementar a equipe." : explanation(found, project);
                 items.add(itemNode(new ProposalItem(UUID.randomUUID(), "CREATE", project.id(), project.identification(), "TEAM", team.id(), team.identification(), period.start(), period.end(), false, status, itemExplanation, found.stream().flatMap(c -> c.commitmentIds().stream()).toList())));
-                if (locality != null && team.initialLocation() != null && !team.initialLocation().equalsIgnoreCase(locality)) {
-                    items.add(itemNode(new ProposalItem(UUID.randomUUID(), "TRANSPORT", project.id(), project.identification(), "TEAM", team.id(), team.identification(), period.start().minusDays(1), period.start().minusDays(1), false, "PENDING_TRANSPORT", "Origem " + team.initialLocation() + " e destino " + locality + "; duração deve ser informada.", List.of())));
+                String origin = team.initialLocation();
+                if (origin == null || origin.isBlank()) origin = requireTeams().organizationLocation(org).baseLocation();
+                if (locality != null && origin != null && !origin.equalsIgnoreCase(locality)) {
+                    items.add(itemNode(new ProposalItem(UUID.randomUUID(), "TRANSPORT", project.id(), project.identification(), "TEAM", team.id(), team.identification(), period.start().minusDays(1), period.start().minusDays(1), false, "PENDING_TRANSPORT", "Origem " + origin + " e destino " + locality + "; duração deve ser informada.", List.of())));
                 }
                 planned++;
             }
         }
-        ObjectNode payload = mapper.createObjectNode(); payload.put("strategy", "priority-deadline-greedy-v1"); payload.put("baseRevision", baseRevision); payload.put("explanation", "Proposta determinística por prioridade, prazo, margem e identificador; compromissos fixados são preservados."); payload.set("items", items); payload.set("unattendedProjects", unattended); payload.put("fullyViable", unattended.isEmpty() && items.findValuesAsText("status").stream().noneMatch(status -> status.equals("PENDING_TRANSPORT") || status.equals("ALERT_CAPACITY"))); payload.put("plannedProjectAllocations", planned);
+        ObjectNode payload = mapper.createObjectNode(); payload.put("strategy", "priority-deadline-greedy-v1"); payload.put("baseRevision", baseRevision); payload.put("explanation", "Proposta determinística por prazo, prioridade, antecipação, ociosidade e deslocamento; compromissos fixados são preservados."); payload.set("teamCompositionSnapshot", compositionSnapshot); payload.set("items", items); payload.set("unattendedProjects", unattended); payload.put("fullyViable", unattended.isEmpty() && items.findValuesAsText("status").stream().noneMatch(status -> status.equals("PENDING_TRANSPORT") || status.equals("ALERT_CAPACITY"))); payload.put("plannedProjectAllocations", planned);
         return repo.saveProposal(org, repo.nextProposalVersion(org), baseRevision, payload.get("explanation").asText(), payload);
     }
 
@@ -176,6 +183,7 @@ public class PlanningService {
         ProposalResponse proposal = proposal(org, id);
         if (!"DRAFT".equals(proposal.status())) throw new OptimisticLockingFailureException("Proposal is no longer draft");
         if (repo.currentRevision(org) != proposal.baseRevision()) throw new OptimisticLockingFailureException("Proposal is stale; generate a new proposal");
+        ensureCompositionUnchanged(org, proposal.payload());
         List<ProposalItem> items = readItems(proposal.payload());
         Set<UUID> selected = request == null || request.itemIds() == null || request.itemIds().isEmpty() ? items.stream().map(ProposalItem::itemId).collect(Collectors.toSet()) : new HashSet<>(request.itemIds());
         List<ProposalItem> chosen = items.stream().filter(i -> selected.contains(i.itemId())).toList();
@@ -190,7 +198,7 @@ public class PlanningService {
             if (!"CREATE".equals(item.operation())) continue;
             AllocationRequest allocation = new AllocationRequest(item.projectId(), item.resourceType(), item.resourceId(), item.startDate(), item.endDate(), item.fixed());
             validateReferences(org, allocation); ensureNoBlocking(conflicts(org, allocation));
-            repo.saveAllocation(org, allocation);
+            repo.saveAllocation(org, allocation, snapshotMembers(org, allocation));
         }
         repo.markProposal(org, id, "APPROVED");
         repo.log(org, "APPROVE", "PROPOSAL", id, mapper.createObjectNode().put("selectedItems", chosen.size()));
@@ -223,7 +231,7 @@ public class PlanningService {
         if (!employee.active()) result.add(conflict("INACTIVE_RESOURCE", "BLOCKING", "EMPLOYEE", employee.id(), r.startDate(), r.endDate(), "O funcionário está inativo.", "Ative o funcionário ou selecione outro recurso.", List.of()));
         for (RemoteUnavailability u : requireTeams().unavailability(org, employee.id())) if (overlaps(u.startDate(), u.endDate(), r.startDate(), r.endDate())) result.add(conflict("EMPLOYEE_UNAVAILABLE", "BLOCKING", "EMPLOYEE", employee.id(), u.startDate(), u.endDate(), "O funcionário possui indisponibilidade cadastrada.", "Escolha outro período ou funcionário.", List.of()));
         for (RemoteMembership membership : requireTeams().teamsForEmployee(org, employee.id())) {
-            for (AllocationResponse a : repo.allocations(org, null, "TEAM", membership.teamId(), r.startDate(), r.endDate())) if (!"CANCELLED".equals(a.status()) && !a.id().equals(excluded) && overlaps(a.startDate(), a.endDate(), r.startDate(), r.endDate())) result.add(conflict("MULTIPLE_TEAM_COMMITMENT", "BLOCKING", "EMPLOYEE", employee.id(), r.startDate(), r.endDate(), "O funcionário está comprometido por outra equipe no mesmo período.", "Realocar o funcionário ou ajustar as datas.", List.of(a.id())));
+            for (AllocationResponse a : repo.allocations(org, null, "TEAM", membership.teamId(), r.startDate(), r.endDate())) if (!"CANCELLED".equals(a.status()) && !a.id().equals(excluded) && overlaps(a.startDate(), a.endDate(), r.startDate(), r.endDate()) && effectiveMembers(org, a).contains(employee.id())) result.add(conflict("MULTIPLE_TEAM_COMMITMENT", "BLOCKING", "EMPLOYEE", employee.id(), r.startDate(), r.endDate(), "O funcionário está comprometido por outra equipe no mesmo período.", "Realocar o funcionário ou ajustar as datas.", List.of(a.id())));
         }
         return result;
     }
@@ -236,7 +244,7 @@ public class PlanningService {
             RemoteEmployee employee = requireTeams().getEmployee(org, membership.employeeId());
             if (!employee.active()) result.add(conflict("INACTIVE_RESOURCE", "BLOCKING", "EMPLOYEE", employee.id(), r.startDate(), r.endDate(), "A equipe contém funcionário inativo.", "Atualize a composição ou use outra equipe.", List.of()));
             for (RemoteUnavailability u : requireTeams().unavailability(org, employee.id())) if (overlaps(u.startDate(), u.endDate(), r.startDate(), r.endDate())) result.add(conflict("EMPLOYEE_UNAVAILABLE", "BLOCKING", "EMPLOYEE", employee.id(), u.startDate(), u.endDate(), "Um integrante possui indisponibilidade cadastrada.", "Exclua temporariamente o integrante ou ajuste o período.", List.of()));
-            for (RemoteMembership other : requireTeams().teamsForEmployee(org, employee.id())) for (AllocationResponse a : repo.allocations(org, null, "TEAM", other.teamId(), r.startDate(), r.endDate())) if (!a.id().equals(excluded) && !"CANCELLED".equals(a.status()) && !a.resourceId().equals(team.id()) && overlaps(a.startDate(), a.endDate(), r.startDate(), r.endDate())) result.add(conflict("MULTIPLE_TEAM_COMMITMENT", "BLOCKING", "EMPLOYEE", employee.id(), r.startDate(), r.endDate(), "Um integrante está comprometido por outra equipe.", "Realocar o integrante ou ajustar as datas.", List.of(a.id())));
+            for (RemoteMembership other : requireTeams().teamsForEmployee(org, employee.id())) for (AllocationResponse a : repo.allocations(org, null, "TEAM", other.teamId(), r.startDate(), r.endDate())) if (!a.id().equals(excluded) && !"CANCELLED".equals(a.status()) && !a.resourceId().equals(team.id()) && overlaps(a.startDate(), a.endDate(), r.startDate(), r.endDate()) && effectiveMembers(org, a).contains(employee.id())) result.add(conflict("MULTIPLE_TEAM_COMMITMENT", "BLOCKING", "EMPLOYEE", employee.id(), r.startDate(), r.endDate(), "Um integrante está comprometido por outra equipe.", "Realocar o integrante ou ajustar as datas.", List.of(a.id())));
         }
         return result;
     }
@@ -256,6 +264,34 @@ public class PlanningService {
     }
 
     private void validateReferences(UUID org, AllocationRequest r) { requireProjects().get(org, r.projectId()); validateResourceReference(org, r.resourceType(), r.resourceId()); }
+    private Set<UUID> snapshotMembers(UUID org, AllocationRequest r) {
+        if ("EMPLOYEE".equals(r.resourceType())) return Set.of(r.resourceId());
+        return requireTeams().employeesForTeam(org, r.resourceId()).stream().map(RemoteMembership::employeeId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+    private void ensureCompositionUnchanged(UUID org, JsonNode payload) {
+        JsonNode snapshot = payload.path("teamCompositionSnapshot");
+        if (!snapshot.isObject()) return;
+        Iterator<String> names = snapshot.fieldNames();
+        while (names.hasNext()) {
+            UUID teamId = UUID.fromString(names.next());
+            List<String> current = requireTeams().employeesForTeam(org, teamId).stream().map(RemoteMembership::employeeId).map(UUID::toString).sorted().toList();
+            List<String> generated = mapper.convertValue(snapshot.path(teamId.toString()), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
+            if (!current.equals(generated)) throw new OptimisticLockingFailureException("Proposal is stale; team composition changed");
+        }
+    }
+    private Set<UUID> effectiveMembers(UUID org, AllocationResponse allocation) {
+        Set<UUID> members = repo.allocationMemberIds(org, allocation.id());
+        if (members.isEmpty() && "TEAM".equals(allocation.resourceType())) {
+            try { members = requireTeams().employeesForTeam(org, allocation.resourceId()).stream().map(RemoteMembership::employeeId)
+                    .collect(Collectors.toCollection(LinkedHashSet::new)); }
+            catch (RemoteReferenceNotFoundException ignored) { return Set.of(); }
+        }
+        for (AllocationExceptionResponse exception : repo.exceptions(org, allocation.id())) {
+            if (overlaps(exception.startDate(), exception.endDate(), allocation.startDate(), allocation.endDate())) members.remove(exception.employeeId());
+        }
+        return members;
+    }
     private void validateResourceReference(UUID org, String type, UUID id) { if ("TEAM".equals(normalizeType(type))) { if (!requireTeams().getTeam(org, id).active()) throw new IllegalArgumentException("Inactive team cannot be allocated"); } else { if (!requireTeams().getEmployee(org, id).active()) throw new IllegalArgumentException("Inactive employee cannot be allocated"); } }
     private void ensureNoBlocking(List<ConflictResponse> conflicts) { if (conflicts.stream().anyMatch(c -> "BLOCKING".equals(c.severity()))) throw new IllegalArgumentException(conflicts.stream().filter(c -> "BLOCKING".equals(c.severity())).map(ConflictResponse::description).distinct().collect(Collectors.joining(" "))); }
     private AllocationRequest normalize(AllocationRequest r) { return new AllocationRequest(r.projectId(), normalizeType(r.resourceType()), r.resourceId(), r.startDate(), r.endDate(), r.fixed()); }
@@ -270,7 +306,16 @@ public class PlanningService {
     private ProjectClient requireProjects() { requireClients(); return projects; }
     private TeamClient requireTeams() { requireClients(); return teams; }
 
-    private Comparator<RemoteProject> projectComparator() { return Comparator.comparingInt((RemoteProject p) -> priority(p.priority())).reversed().thenComparing(p -> p.plannedEndDate() == null ? LocalDate.MAX : p.plannedEndDate()).thenComparing(p -> margin(p) == null ? Integer.MAX_VALUE : margin(p)).thenComparing(RemoteProject::identification).thenComparing(RemoteProject::id); }
+    private Comparator<RemoteProject> projectComparator() {
+        // RN-DEC-16 is lexicographic: protect the earliest deadlines before
+        // using priority as a tie-breaker. Sorting by priority first can make
+        // a high-priority project consume the only resource needed by an
+        // earlier deadline, so it is not considered an optimization strategy.
+        return Comparator.comparing((RemoteProject p) -> p.plannedEndDate() == null ? LocalDate.MAX : p.plannedEndDate())
+                .thenComparing(Comparator.comparingInt((RemoteProject p) -> priority(p.priority())).reversed())
+                .thenComparing(p -> margin(p) == null ? Integer.MAX_VALUE : margin(p))
+                .thenComparing(RemoteProject::identification).thenComparing(RemoteProject::id);
+    }
     private int priority(String value) { return switch (value == null ? "NORMAL" : value.toUpperCase()) { case "CRITICAL" -> 4; case "HIGH" -> 3; case "LOW" -> 1; default -> 2; }; }
     private Integer margin(RemoteProject p) { if (p.plannedStartDate() == null || p.plannedEndDate() == null || p.estimatedDurationDays() == null) return null; return (int)(p.plannedEndDate().toEpochDay() - p.plannedStartDate().toEpochDay() + 1 - p.estimatedDurationDays()); }
     private Period projectPeriod(RemoteProject p) { if (p.plannedStartDate() == null || p.plannedEndDate() == null) return null; int duration = p.estimatedDurationDays() == null ? (int)(p.plannedEndDate().toEpochDay() - p.plannedStartDate().toEpochDay() + 1) : p.estimatedDurationDays(); if (duration < 1) return null; LocalDate end = p.plannedStartDate().plusDays(duration - 1); if (end.isAfter(p.plannedEndDate())) return null; return new Period(p.plannedStartDate(), end); }
