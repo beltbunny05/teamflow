@@ -110,3 +110,19 @@ A proposta inicial é um esqueleto determinístico de prioridade-prazo: projetos
 ### Pendências técnicas
 
 Ainda faltam clientes REST efetivamente usados pelo Planning Service para Team/Project com timeout, controle otimista de versão de propostas, endpoints completos de edição de alocações e transportes, e testes de integração do fluxo vertical. Essas lacunas estão registradas como trabalho restante.
+
+## 9. Atualização arquitetural — núcleo operacional
+
+O texto histórico acima permanece preservado. A implementação atual do Planning Service usa `RestClient` para consultar os contratos públicos do Team Service e Project Service. Cada chamada propaga `X-Organization-Id`, valida o `organization_id` retornado quando disponível e possui timeout de conexão e leitura configuráveis por `TEAMFLOW_CLIENT_CONNECT_TIMEOUT_MS` e `TEAMFLOW_CLIENT_READ_TIMEOUT_MS`. Falhas técnicas são tratadas como indisponibilidade, nunca como disponibilidade confirmada.
+
+O Planning Service é o proprietário de alocações, exceções, transportes, estado de revisão, propostas e log de alterações. A migração `V3__complete_planning_lifecycle.sql` adicionou revisões otimistas, exceções, estado por organização e metadados de proposta. Não há acesso direto aos bancos dos demais serviços.
+
+As propostas são geradas sem mutação do planejamento confirmado. A aprovação integral ou seletiva exige proposta DRAFT não obsoleta, rejeita transporte pendente e conflitos bloqueantes, revalida cada item selecionado e persiste em transação local. A revisão da organização protege contra aprovação de proposta gerada sobre estado antigo.
+
+### Estratégia da heurística
+
+`priority-deadline-greedy-v1` ordena projetos por prioridade descendente, prazo limite ascendente, margem ascendente, identificação e UUID. Para cada projeto, percorre equipes ativas em ordem estável, ignora candidatos com conflito bloqueante e deduplica integrantes quando uma pessoa aparece em mais de uma equipe. A duração usa dias corridos inclusivos e nunca é calculada por produtividade. Projetos sem recursos são listados como não atendidos com alternativas; quantidade desejada insuficiente vira alerta. A heurística não garante solução ótima.
+
+O custo prático é aproximadamente O(P × R × (A + M × U)), devido às consultas de compromissos e aos vínculos/indisponibilidades remotos. A principal limitação é a ausência de cache/agregação, aceitável para o MVP, mas relevante no cenário de escala.
+
+Intervalos são inclusivos. A chegada de transporte confirmado ocorre em `startDate + durationDays`; transporte sem duração é pendência e não pode ser aprovado como plenamente viável. A composição atual da equipe ainda é consultada para validações; um snapshot imutável de integrantes por compromisso é a próxima medida necessária para blindar completamente compromissos confirmados contra alterações cadastrais posteriores.

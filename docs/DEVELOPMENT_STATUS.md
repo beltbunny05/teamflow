@@ -176,6 +176,52 @@ Adicionar clientes REST isolados para Team/Project com timeout e propagação do
 5. Executar os testes e builds do serviço alterado antes da próxima integração.
 6. Não alterar automaticamente compromissos confirmados nem aplicar propostas sem aprovação.
 
+## 16. Atualização de finalização do núcleo — 2026-11-26
+
+Esta seção supersede as descrições de parcialidade dos itens 8 a 13 acima. O histórico foi preservado para rastreabilidade.
+
+### Implementado
+
+- Planning Service funcional com clientes REST síncronos para Team Service e Project Service, propagação de `X-Organization-Id`, timeouts configuráveis e distinção entre referência inexistente (404) e falha técnica (503).
+- Alocações de equipes e funcionários com criação, edição, cancelamento, filtros, fixação/liberação, validação de referências e revalidação de conflitos.
+- Exceções temporárias de integrantes (`EXCLUDE` e `REALLOCATE`) preservando a composição cadastral original da equipe.
+- Transportes individuais e coletivos com origem, destino, início, duração manual opcional, chegada derivada, situação `PENDING`/`CONFIRMED`, edição, cancelamento e revisão em conflitos.
+- Disponibilidade derivada por período com estados `AVAILABLE`, `UNAVAILABLE` e `PENDING`, razões compreensíveis e compromissos relacionados.
+- Conflitos classificados por tipo e gravidade, incluindo sobreposição, recurso inativo, indisponibilidade, múltiplos vínculos, transporte pendente e alocação durante deslocamento.
+- Propostas versionadas DRAFT com revisão-base, edição, aprovação integral ou seletiva, rejeição, descarte, registro de alteração e proteção contra proposta desatualizada.
+- Heurística determinística `priority-deadline-greedy-v1`: ordena por prioridade descendente, prazo ascendente, margem ascendente, identificação e UUID; preserva itens fixados; produz itens concretos `CREATE`, `RETAIN` e `TRANSPORT`; identifica projetos não atendidos e alternativas.
+- Quantidade desejada insuficiente é representada como `ALERT_CAPACITY`, sem bloqueio físico. Transporte sem duração é `PENDING_TRANSPORT` e impede aprovação integral até sua definição.
+- Frontend operacional para consulta e manutenção básica de alocações, fixação, cancelamento, transportes pendentes e ciclo de propostas. Dashboard, calendário, Gantt, gráficos e drag-and-drop continuam fora do escopo.
+
+### Regras de datas e consistência
+
+- Intervalos de alocação são inclusivos e usam dias corridos: `startDate` e `endDate` pertencem ao compromisso.
+- Para transporte confirmado, a chegada é `startDate + durationDays`; durante o intervalo entre saída e chegada o recurso é considerado indisponível.
+- Propostas nunca alteram alocações confirmadas durante a geração. A aprovação revalida referências e conflitos e incrementa a revisão da organização.
+- A composição de uma equipe não é copiada para a alocação; o registro mantém o vínculo da equipe e exceções temporárias. Alterações futuras de composição não atualizam linhas persistidas, mas a avaliação de conflitos ainda consulta a composição atual. A criação de um snapshot de integrantes por compromisso é risco conhecido antes de produção.
+
+### Algoritmo e limites
+
+A implementação usa uma heurística gulosa determinística adequada ao MVP, não garante ótimo matemático e não inventa produtividade. A escolha de equipes é feita em ordem estável, evitando conflitos bloqueantes e dupla contagem de funcionários compartilhados. A complexidade prática é aproximadamente O(P × R × (A + M × U)), onde P é o número de projetos, R de equipes candidatas, A de alocações, M de integrantes e U de consultas de indisponibilidade; as consultas REST repetidas tornam a versão atual inadequada para grande escala sem cache/agregação.
+
+A cidade base da organização ainda não possui entidade/endpoint no Identity Service. Enquanto essa decisão de cadastro não for modelada, a origem automática usa localização inicial explícita da equipe/recurso; ausência dessa informação gera uma pendência de localização em vez de transporte confirmado.
+
+### Validação desta retomada
+
+- `docker compose build` dos serviços e frontend: aprovado.
+- `docker compose up -d`: aprovado; PostgreSQL, quatro serviços e frontend saudáveis.
+- `docker compose ps`: todos os containers em estado `healthy`.
+- `npm run build` no frontend: aprovado, Vite gerou o bundle de produção.
+- Planning Service Maven: 3 testes, 0 falhas, 0 erros.
+- Team Service Maven: testes unitários aprovados; `TeamApiIntegrationTest` falhou por ambiente Testcontainers sem socket Docker dentro do container Maven.
+- Project Service Maven: testes unitários aprovados; `ProjectApiIntegrationTest` falhou pelo mesmo motivo (`NoSuchFileException /var/run/docker.sock`).
+- Smoke REST local: health checks, consultas paginadas, geração e persistência de proposta DRAFT aprovados.
+- `git diff --check`: aprovado.
+
+### Próximo incremento obrigatório antes do dashboard
+
+Adicionar snapshot imutável dos integrantes no compromisso, modelar a cidade base da organização no serviço proprietário e ampliar a suíte com um cenário automatizado de aproximadamente 40 funcionários, além de corrigir a configuração de Testcontainers para execução Maven com Docker Desktop.
+
 ## 14. Decisões e limites ainda abertos
 
 - Autenticação, autorização, auditoria e observabilidade de produção.

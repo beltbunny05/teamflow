@@ -24,7 +24,8 @@ public class TeamService {
         OffsetDateTime now = now();
         Team team = new Team(UUID.randomUUID(), organizationId, request.identification().trim(),
                 request.totalMembers(), request.composition(), request.competencies(),
-                request.qualifications(), request.availability(), normalizedStatus(request.status()), now, now);
+                request.qualifications(), request.availability(), normalizedStatus(request.status()),
+                normalize(request.initialLocation()), now, now);
         return toResponse(repository.save(team));
     }
 
@@ -46,7 +47,7 @@ public class TeamService {
         Team updated = new Team(current.id(), current.organizationId(), request.identification().trim(),
                 request.totalMembers(), request.composition(), request.competencies(),
                 request.qualifications(), request.availability(), normalizedStatus(request.status()),
-                current.createdAt(), now());
+                normalize(request.initialLocation()), current.createdAt(), now());
         return repository.update(updated).map(this::toResponse)
                 .orElseThrow(() -> new TeamNotFoundException(id));
     }
@@ -54,11 +55,15 @@ public class TeamService {
     private TeamResponse toResponse(Team team) {
         return new TeamResponse(team.id(), team.organizationId(), team.identification(), team.totalMembers(),
                 team.composition(), team.competencies(), team.qualifications(), team.availability(),
-                team.status(), team.createdAt(), team.updatedAt());
+                team.status(), team.initialLocation(), team.createdAt(), team.updatedAt());
     }
 
     private String normalizedStatus(String status) {
         return status == null || status.isBlank() ? null : status.trim();
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private OffsetDateTime now() {

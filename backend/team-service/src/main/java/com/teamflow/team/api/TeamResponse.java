@@ -17,6 +17,7 @@ public record TeamResponse(
         List<String> qualifications,
         JsonNode availability,
         String status,
+        String initialLocation,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

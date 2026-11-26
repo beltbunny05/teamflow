@@ -1,12 +1,92 @@
 import { useEffect, useState } from 'react'
 import { PageHeader } from '../../components/PageHeader'
-import { ErrorMessage, LoadingState } from '../../components/Feedback'
+import { ErrorMessage, EmptyState, LoadingState } from '../../components/Feedback'
+import { FormActions, FormHeading } from '../../components/FormActions'
 import { PLANNING_API_URL } from '../../app/config'
 import { request } from '../../services/httpClient'
 
-export function PlanningPage() { const [allocations, setAllocations] = useState([]); const [transports, setTransports] = useState([]); const [error, setError] = useState(''); const [loading, setLoading] = useState(true)
-  const load = async () => { setLoading(true); try { const [a, t] = await Promise.all([request(PLANNING_API_URL, '/planning/allocations'), request(PLANNING_API_URL, '/planning/transports')]); setAllocations(a); setTransports(t) } catch (e) { setError(e.message) } finally { setLoading(false) } }
+const EMPTY = { projectId: '', resourceType: 'TEAM', resourceId: '', startDate: '', endDate: '', fixed: false }
+
+export function PlanningPage() {
+  const [allocations, setAllocations] = useState([])
+  const [transports, setTransports] = useState([])
+  const [proposals, setProposals] = useState([])
+  const [form, setForm] = useState(EMPTY)
+  const [transportDurations, setTransportDurations] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+
+  const load = async () => {
+    setLoading(true); setError('')
+    try {
+      const [a, t, p] = await Promise.all([
+        request(PLANNING_API_URL, '/planning/allocations'),
+        request(PLANNING_API_URL, '/planning/transports'),
+        request(PLANNING_API_URL, '/planning/proposals'),
+      ])
+      setAllocations(a); setTransports(t); setProposals(p)
+    } catch (e) { setError(e.message) } finally { setLoading(false) }
+  }
+
   useEffect(() => { load() }, [])
-  const proposal = async () => { try { const result = await request(PLANNING_API_URL, '/planning/proposals', { method: 'POST' }); window.alert(`Proposta ${result.version} criada para revisão.`) } catch (e) { setError(e.message) } }
-  return <section><PageHeader title="Planejamento" description="Consulte compromissos, transportes e gere propostas que só alteram o planejamento após aprovação." actionLabel="Gerar proposta" onAction={proposal} />{error && <ErrorMessage>{error}</ErrorMessage>}{loading ? <LoadingState label="Carregando planejamento…" /> : <div className="content-section"><h2>Alocações confirmadas</h2><div className="table-wrap"><table><thead><tr><th>Projeto</th><th>Recurso</th><th>Período</th><th>Fixado</th><th>Situação</th></tr></thead><tbody>{allocations.length ? allocations.map(a => <tr key={a.id}><td>{a.projectId}</td><td>{a.resourceType} · {a.resourceId}</td><td>{a.startDate} → {a.endDate}</td><td>{a.fixed ? 'Sim' : 'Não'}</td><td>{a.status}</td></tr>) : <tr><td colSpan="5">Nenhuma alocação confirmada.</td></tr>}</tbody></table></div><h2>Transportes</h2><div className="table-wrap"><table><thead><tr><th>Recurso</th><th>Origem → destino</th><th>Início</th><th>Duração</th><th>Situação</th></tr></thead><tbody>{transports.length ? transports.map(t => <tr key={t.id}><td>{t.resourceType} · {t.resourceId}</td><td>{t.origin} → {t.destination}</td><td>{t.startDate}</td><td>{t.durationDays ?? 'Pendente'}</td><td>{t.status}</td></tr>) : <tr><td colSpan="5">Nenhum transporte identificado.</td></tr>}</tbody></table></div></div>}</section>
+
+  const saveAllocation = async (event) => {
+    event.preventDefault(); setSaving(true); setError(''); setNotice('')
+    try {
+      await request(PLANNING_API_URL, '/planning/allocations', { method: 'POST', body: JSON.stringify({ ...form, projectId: form.projectId, resourceId: form.resourceId }) })
+      setForm(EMPTY); setNotice('Alocação criada e validada.'); await load()
+    } catch (e) { setError(e.message) } finally { setSaving(false) }
+  }
+
+  const changeFixed = async (allocation) => {
+    try { await request(PLANNING_API_URL, `/planning/allocations/${allocation.id}/fixed?value=${!allocation.fixed}&expectedUpdatedAt=${encodeURIComponent(allocation.updatedAt)}`, { method: 'POST' }); await load() } catch (e) { setError(e.message) }
+  }
+  const cancelAllocation = async (allocation) => {
+    if (!window.confirm('Cancelar esta alocação?')) return
+    try { await request(PLANNING_API_URL, `/planning/allocations/${allocation.id}?expectedUpdatedAt=${encodeURIComponent(allocation.updatedAt)}`, { method: 'DELETE' }); await load() } catch (e) { setError(e.message) }
+  }
+  const generate = async () => {
+    setError(''); setNotice('Gerando proposta…')
+    try { const result = await request(PLANNING_API_URL, '/planning/proposals', { method: 'POST' }); setNotice(`Proposta ${result.version} criada para revisão.`); await load() } catch (e) { setError(e.message); setNotice('') }
+  }
+  const approve = async (proposal, itemIds) => {
+    try { await request(PLANNING_API_URL, `/planning/proposals/${proposal.id}/approve`, { method: 'POST', body: JSON.stringify(itemIds ? { itemIds } : {}) }); setNotice(`Proposta ${proposal.version} aprovada.`); await load() } catch (e) { setError(e.message) }
+  }
+  const reject = async (proposal) => { try { await request(PLANNING_API_URL, `/planning/proposals/${proposal.id}/reject`, { method: 'POST' }); await load() } catch (e) { setError(e.message) } }
+  const defineTransport = async (transport) => {
+    const durationDays = Number(transportDurations[transport.id])
+    if (!durationDays || durationDays < 1) { setError('Informe uma duração de transporte em dias de calendário.'); return }
+    try { await request(PLANNING_API_URL, `/planning/transports/${transport.id}`, { method: 'PUT', body: JSON.stringify({ resourceId: transport.resourceId, resourceType: transport.resourceType, origin: transport.origin, destination: transport.destination, startDate: transport.startDate, durationDays, expectedUpdatedAt: transport.updatedAt }) }); await load() } catch (e) { setError(e.message) }
+  }
+
+  return <section>
+    <PageHeader title="Planejamento" description="Crie compromissos manuais, revise propostas explicáveis e só confirme alterações após aprovação." actionLabel="Gerar proposta automática" onAction={generate} />
+    {error && <ErrorMessage>{error}</ErrorMessage>}
+    {notice && <p className="success-message">{notice}</p>}
+    <div className="content-section">
+      <form className="form-layout" onSubmit={saveAllocation}>
+        <FormHeading eyebrow="ALOCAÇÃO MANUAL" title="Adicionar compromisso" description="Use IDs de projeto e recurso cadastrados. A validação consulta os serviços de origem." />
+        <div className="form-grid"><label>Projeto<input required value={form.projectId} onChange={e => setForm({ ...form, projectId: e.target.value })} placeholder="UUID" /></label><label>Tipo de recurso<select value={form.resourceType} onChange={e => setForm({ ...form, resourceType: e.target.value })}><option>TEAM</option><option>EMPLOYEE</option></select></label><label>Recurso<input required value={form.resourceId} onChange={e => setForm({ ...form, resourceId: e.target.value })} placeholder="UUID" /></label><label>Início<input required type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} /></label><label>Fim<input required type="date" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} /></label></div>
+        <label><input type="checkbox" checked={form.fixed} onChange={e => setForm({ ...form, fixed: e.target.checked })} /> Fixar compromisso</label>
+        <FormActions saving={saving} onCancel={() => setForm(EMPTY)} />
+      </form>
+      {loading ? <LoadingState label="Carregando planejamento…" /> : <>
+        <h2>Alocações confirmadas</h2>
+        {allocations.length === 0 ? <EmptyState title="Nenhuma alocação confirmada" description="Crie uma alocação manual ou aprove uma proposta." /> : <div className="table-wrap"><table><thead><tr><th>Projeto</th><th>Recurso</th><th>Período</th><th>Fixado</th><th>Situação</th><th>Ações</th></tr></thead><tbody>{allocations.map(a => <tr key={a.id}><td>{a.projectId}</td><td>{a.resourceType} · {a.resourceId}</td><td>{a.startDate} → {a.endDate}</td><td>{a.fixed ? 'Sim' : 'Não'}</td><td>{a.status}</td><td><button className="text-button" type="button" onClick={() => changeFixed(a)}>{a.fixed ? 'Liberar' : 'Fixar'}</button> <button className="text-button danger" type="button" onClick={() => cancelAllocation(a)}>Cancelar</button></td></tr>)}</tbody></table></div>}
+        <h2>Transportes</h2>
+        {transports.length === 0 ? <p className="muted">Nenhum deslocamento registrado.</p> : <div className="table-wrap"><table><thead><tr><th>Recurso</th><th>Origem → destino</th><th>Início</th><th>Duração</th><th>Situação</th><th></th></tr></thead><tbody>{transports.map(t => <tr key={t.id}><td>{t.resourceType} · {t.resourceId}</td><td>{t.origin} → {t.destination}</td><td>{t.startDate}</td><td>{t.durationDays ?? <input className="inline-input" type="number" min="1" value={transportDurations[t.id] || ''} onChange={e => setTransportDurations({ ...transportDurations, [t.id]: e.target.value })} placeholder="dias" />}</td><td>{t.status}</td><td>{t.status === 'PENDING' && <button className="text-button" type="button" onClick={() => defineTransport(t)}>Confirmar duração</button>}</td></tr>)}</tbody></table></div>}
+        <h2>Propostas</h2>
+        {proposals.length === 0 ? <p className="muted">Gere uma proposta para avaliar alocações, pendências e projetos não atendidos.</p> : proposals.map(p => <ProposalCard key={p.id} proposal={p} onApprove={approve} onReject={reject} />)}
+      </>}
+    </div>
+  </section>
+}
+
+function ProposalCard({ proposal, onApprove, onReject }) {
+  const items = proposal.payload?.items || []
+  const unattended = proposal.payload?.unattendedProjects || []
+  const selectable = items.filter(item => item.operation === 'CREATE' && item.status !== 'PENDING_TRANSPORT' && item.status !== 'BLOCKING')
+  return <article className="proposal-card"><div className="proposal-heading"><div><span className="eyebrow">VERSÃO {proposal.version}</span><h3>{proposal.status}</h3></div>{proposal.status === 'DRAFT' && <div><button className="button secondary" type="button" onClick={() => onApprove(proposal)}>Aprovar tudo</button> <button className="text-button danger" type="button" onClick={() => onReject(proposal)}>Descartar</button></div>}</div><p>{proposal.explanation}</p><p className="muted">Itens: {items.length} · Projetos não atendidos: {unattended.length} · Revisão-base: {proposal.baseRevision}</p>{items.length > 0 && <ul className="proposal-list">{items.map(item => <li key={item.itemId}><strong>{item.operation}</strong> · {item.projectIdentification} · {item.resourceIdentification} · {item.startDate} → {item.endDate} <span className="status-pill">{item.status}</span></li>)}</ul>}{unattended.length > 0 && <p className="warning-message">Projetos sem atendimento: {unattended.map(item => item.projectIdentification).join(', ')}. Alternativas foram incluídas na proposta.</p>}{proposal.status === 'DRAFT' && selectable.length > 0 && <button className="text-button" type="button" onClick={() => onApprove(proposal, selectable.map(item => item.itemId))}>Aprovar somente itens viáveis</button>}</article>
 }

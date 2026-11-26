@@ -32,12 +32,12 @@ public class JdbcTeamRepository implements TeamRepository {
     public Team save(Team team) {
         jdbcTemplate.update("""
                 INSERT INTO teams (id, organization_id, identification, total_members, composition,
-                    competencies, qualifications, availability, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, CAST(? AS jsonb), CAST(? AS jsonb), CAST(? AS jsonb), CAST(? AS jsonb), ?, ?, ?)
+                    competencies, qualifications, availability, status, initial_location, created_at, updated_at)
+                VALUES (?, ?, ?, ?, CAST(? AS jsonb), CAST(? AS jsonb), CAST(? AS jsonb), CAST(? AS jsonb), ?, ?, ?, ?)
                 """,
                 team.id(), team.organizationId(), team.identification(), team.totalMembers(),
                 json(team.composition()), json(team.competencies()), json(team.qualifications()),
-                json(team.availability()), team.status(), team.createdAt(), team.updatedAt());
+                json(team.availability()), team.status(), team.initialLocation(), team.createdAt(), team.updatedAt());
         return team;
     }
 
@@ -45,7 +45,7 @@ public class JdbcTeamRepository implements TeamRepository {
     public List<Team> findAll(UUID organizationId, int page, int size) {
         return jdbcTemplate.query("""
                 SELECT id, organization_id, identification, total_members, composition,
-                    competencies, qualifications, availability, status, created_at, updated_at
+                    competencies, qualifications, availability, status, initial_location, created_at, updated_at
                 FROM teams WHERE organization_id = ?
                 ORDER BY identification, id LIMIT ? OFFSET ?
                 """, rowMapper, organizationId, size, page * size);
@@ -62,7 +62,7 @@ public class JdbcTeamRepository implements TeamRepository {
     public Optional<Team> findById(UUID organizationId, UUID id) {
         return jdbcTemplate.query("""
                 SELECT id, organization_id, identification, total_members, composition,
-                    competencies, qualifications, availability, status, created_at, updated_at
+                    competencies, qualifications, availability, status, initial_location, created_at, updated_at
                 FROM teams WHERE organization_id = ? AND id = ?
                 """, rowMapper, organizationId, id).stream().findFirst();
     }
@@ -72,12 +72,12 @@ public class JdbcTeamRepository implements TeamRepository {
         int updated = jdbcTemplate.update("""
                 UPDATE teams SET identification = ?, total_members = ?, composition = CAST(? AS jsonb),
                     competencies = CAST(? AS jsonb), qualifications = CAST(? AS jsonb),
-                    availability = CAST(? AS jsonb), status = ?, updated_at = ?
+                    availability = CAST(? AS jsonb), status = ?, initial_location = ?, updated_at = ?
                 WHERE organization_id = ? AND id = ?
                 """,
                 team.identification(), team.totalMembers(), json(team.composition()),
                 json(team.competencies()), json(team.qualifications()), json(team.availability()),
-                team.status(), team.updatedAt(), team.organizationId(), team.id());
+                team.status(), team.initialLocation(), team.updatedAt(), team.organizationId(), team.id());
         return updated == 0 ? Optional.empty() : Optional.of(team);
     }
 
@@ -95,6 +95,7 @@ public class JdbcTeamRepository implements TeamRepository {
                         .constructCollectionType(List.class, String.class)),
                 readJson(resultSet.getString("availability")),
                 resultSet.getString("status"),
+                resultSet.getString("initial_location"),
                 resultSet.getObject("created_at", OffsetDateTime.class),
                 resultSet.getObject("updated_at", OffsetDateTime.class));
     }

@@ -126,6 +126,18 @@ legend { padding: 0 6px; font-size: 13px; font-weight: 650; }
 .back-button:hover { color: var(--accent); }
 .detail-page .detail-header { align-items: flex-end; }
 .form-page .form-layout { max-width: 720px; }
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); }
+.form-grid label { margin-bottom: 0; }
+.form-layout select, .inline-input { width: 100%; padding: 10px 11px; border: 1px solid var(--rule); border-radius: 2px; color: var(--ink); background: var(--surface); }
+.inline-input { width: 82px; padding: 6px 7px; }
+.proposal-card { margin: 0 0 var(--s5); padding: var(--s5); border-top: 2px solid var(--ink); background: var(--surface); }
+.proposal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); }
+.proposal-heading h3 { margin-top: 5px; font-size: 18px; }
+.proposal-list { display: grid; gap: 8px; margin: var(--s4) 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.status-pill { display: inline-block; margin-left: 5px; padding: 3px 6px; border: 1px solid var(--rule); color: var(--ink); font-size: 10px; font-weight: 750; letter-spacing: .04em; }
+.success-message { margin-bottom: var(--s5); padding: 11px 14px; border-left: 3px solid #567d5d; color: #426147; background: #edf4ed; font-size: 14px; }
+.warning-message { padding: 11px 14px; border-left: 3px solid #b37a35; color: #815621; background: #fbf3e7; font-size: 13px; line-height: 1.45; }
+.danger { color: var(--error); }
 
 @media (max-width: 900px) {
   .app-frame { display: block; }
@@ -136,6 +148,8 @@ legend { padding: 0 6px; font-size: 13px; font-weight: 650; }
   .mobile-header { display: flex; align-items: center; justify-content: flex-end; gap: 16px; min-height: 36px; }
   .app-main .page-content { width: min(100% - 48px, 1120px); padding-top: 48px; }
 }
+@media (max-width: 760px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } .proposal-heading { display: block; } .proposal-heading .button { margin-top: 10px; } }
 
 @media (max-width: 600px) {
   .mobile-header { padding-top: 10px; }

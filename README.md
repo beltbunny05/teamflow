@@ -70,6 +70,14 @@ O comando `down -v` remove somente o volume nomeado do ambiente local e deve ser
 
 ## Núcleo operacional disponível
 
-Além dos CRUDs de equipes e projetos, a etapa atual disponibiliza cadastro de funcionários e memberships no Team Service e endpoints persistentes de alocações, transportes, conflitos e propostas no Planning Service. O frontend possui telas simples de Funcionários e Planejamento; o dashboard visual está deliberadamente fora do escopo.
+Além dos CRUDs de equipes e projetos, a etapa atual disponibiliza funcionários, memberships, indisponibilidades, alocações individuais/coletivas, exceções temporárias, transportes pendentes/confirmados, disponibilidade, conflitos e propostas versionadas. O Planning Service consulta Team e Project por REST; o frontend possui telas operacionais simples de Funcionários e Planejamento. O dashboard visual está deliberadamente fora do escopo.
 
-Para testar manualmente, envie `X-Organization-Id` nas chamadas. Exemplos: `POST /employees`, `PUT /employees/{employeeId}/teams/{teamId}`, `POST /planning/allocations`, `POST /planning/transports`, `POST /planning/conflicts`, `POST /planning/proposals` e `POST /planning/proposals/{id}/approve`. Uma proposta é criada como `DRAFT` e não altera alocações automaticamente.
+Para testar manualmente, envie `X-Organization-Id` nas chamadas. Endpoints principais:
+
+- Team: `GET/POST /employees`, `PUT /employees/{id}`, `DELETE /employees/{id}`, `GET /employees/{id}/teams`, `GET /employees/teams/{teamId}/employees`, `POST /employees/{id}/unavailability`.
+- Planning: `GET/POST/PUT /planning/allocations`, `POST /planning/allocations/{id}/fixed`, `DELETE /planning/allocations/{id}`, `POST/GET /planning/allocations/{id}/exceptions`.
+- Transportes: `GET/POST/PUT /planning/transports`, `DELETE /planning/transports/{id}`.
+- Planejamento: `POST/GET /planning/proposals`, `GET/PUT /planning/proposals/{id}`, `POST /planning/proposals/{id}/approve`, `/reject` e `/discard`.
+- Consultas: `POST /planning/conflicts` e `GET /planning/availability`.
+
+Uma proposta é criada como `DRAFT` e não altera alocações automaticamente. Transporte sem duração aparece como `PENDING_TRANSPORT` e deve ser definido antes da aprovação. Consulte `docs/DEVELOPMENT_STATUS.md` para limitações conhecidas e resultados de validação.

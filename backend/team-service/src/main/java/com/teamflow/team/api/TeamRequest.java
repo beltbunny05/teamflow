@@ -17,6 +17,12 @@ public record TeamRequest(
         List<@NotBlank @Size(max = 100) String> competencies,
         List<@NotBlank @Size(max = 100) String> qualifications,
         JsonNode availability,
-        @Size(max = 50) String status
+        @Size(max = 50) String status,
+        @Size(max = 150) String initialLocation
 ) {
+    public TeamRequest(String identification, Integer totalMembers, List<CompositionItem> composition,
+                       List<String> competencies, List<String> qualifications, JsonNode availability,
+                       String status) {
+        this(identification, totalMembers, composition, competencies, qualifications, availability, status, null);
+    }
 }
